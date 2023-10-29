@@ -1,0 +1,6 @@
+[submodule "lib/SDL_FontCache"]
+	path = lib/SDL_FontCache
+	url = https://github.com/grimfang4/SDL_FontCache.git
+[submodule "lib/OpenCL-CLHPP"]
+	path = lib/OpenCL-CLHPP
+	url = https://github.com/KhronosGroup/OpenCL-CLHPP.git

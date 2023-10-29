@@ -8,7 +8,8 @@
 
 #include <SDL.h>
 
-#include "Misc/BivariateFunction.hpp"
+#include "misc/BivariateFunction.hpp"
+#include "Plot/Plot.hpp"
 
 class Application
 {
@@ -22,9 +23,13 @@ private:
 
     bool is_running = true;
 
+    Plot plot;
+
     void main ();
 
     void did_receive_event (SDL_Event);
+
+    void mouse_moved (SDL_MouseMotionEvent);
 };
 
 

@@ -3,9 +3,21 @@
 
 #include "Application/Application.hpp"
 
+#include "misc/BivariateFunction.hpp"
+
 int main ()
 {
-    Application application (nullptr, nullptr);
+    BivariateFunction
+        x_function = [](SDL_FPoint vector) -> float {
+
+            return vector.y;
+        },
+        y_function = [](SDL_FPoint vector) -> float {
+
+            return -.2f * vector.y - (9.8f / 8) * sin(vector.x);
+        };
+
+    Application application (x_function, y_function);
 
     return 0;
 }

@@ -7,7 +7,7 @@
 #include <SDL.h>
 
 #include "Application.hpp"
-#include "Misc/Constants.hpp"
+#include "misc/constants.hpp"
 
 static SDL_Window * get_window ()
 {
@@ -37,7 +37,8 @@ static SDL_Renderer * get_renderer (SDL_Window * window)
 
 Application::Application (BivariateFunction x_function, BivariateFunction y_function):
     window   { get_window() },
-    renderer { get_renderer(window) }
+    renderer { get_renderer(window) },
+    plot (renderer, x_function, y_function)
 {
     main();
 }
@@ -49,6 +50,18 @@ void Application::main ()
     do
     {
         SDL_RenderClear(renderer);
+
+        plot.update();
+
+        plot.draw();
+
+        SDL_SetRenderDrawColor(
+                renderer,
+                BACKGROUND_COLOUR.r,
+                BACKGROUND_COLOUR.g,
+                BACKGROUND_COLOUR.b,
+                BACKGROUND_COLOUR.a
+                );
 
         SDL_RenderPresent(renderer);
 
@@ -64,5 +77,13 @@ void Application::did_receive_event (SDL_Event event)
         case SDL_QUIT:
             is_running = false;
             break;
+
+        case SDL_MOUSEMOTION:
+            break;
     }
+}
+
+void Application::mouse_moved (SDL_MouseMotionEvent event)
+{
+    //
 }

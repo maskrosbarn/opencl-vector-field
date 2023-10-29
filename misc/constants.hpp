@@ -1,0 +1,37 @@
+//
+// Created by Russell Forrest on 20/10/2023.
+//
+
+#ifndef VECTORFIELD_CONSTANTS_HPP
+#define VECTORFIELD_CONSTANTS_HPP
+
+
+#include <SDL.h>
+
+constexpr float
+    WINDOW_WIDTH  = 700,
+    WINDOW_HEIGHT = 700;
+
+const char * const FONT_FILE_NAME = "Monaco.ttf";
+
+constexpr float FONT_SIZE = 14.f;
+
+const SDL_Color
+    BACKGROUND_COLOUR = { 255, 255, 255, 255 },
+    FOREGROUND_COLOUR = { 0, 0, 0, 255 };
+
+const int
+    SAMPLE_POINT_ROW_COUNT    = 15,
+    SAMPLE_POINT_COLUMN_COUNT = 15;
+
+constexpr float
+    SAMPLE_POINT_ROW_SPACING    = WINDOW_HEIGHT / SAMPLE_POINT_ROW_COUNT,
+    SAMPLE_POINT_COLUMN_SPACING = WINDOW_WIDTH / SAMPLE_POINT_COLUMN_COUNT;
+
+constexpr float
+    VECTOR_ARROW_BODY_LENGTH     = 20.f,
+    VECTOR_ARROW_HEAD_LENGTH     = 16.f,
+    VECTOR_ARROW_HEAD_HALF_WIDTH = 6.F;
+
+
+#endif //VECTORFIELD_CONSTANTS_HPP
