@@ -30,6 +30,8 @@ private:
     void did_receive_event (SDL_Event);
 
     void mouse_moved (SDL_MouseMotionEvent);
+    void mouse_button_down (SDL_MouseButtonEvent);
+    void mouse_button_up (SDL_MouseButtonEvent);
 };
 
 

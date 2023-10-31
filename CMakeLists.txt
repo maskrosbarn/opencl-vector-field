@@ -15,7 +15,9 @@ add_executable(VectorField main.cpp
         Plot/Plot.cpp
         Plot/Plot.hpp
         misc/vector_computation.hpp
-        misc/vector_computation.cpp)
+        misc/vector_computation.cpp
+        misc/heat_map_colouring.hpp
+        misc/heat_map_colouring.cpp)
 
 target_include_directories (VectorField PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

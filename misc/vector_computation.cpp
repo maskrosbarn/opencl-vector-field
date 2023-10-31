@@ -3,6 +3,7 @@
 //
 
 #import <cmath>
+#import <format>
 
 #include "misc/vector_computation.hpp"
 #include "misc/constants.hpp"
@@ -16,12 +17,17 @@ float angle (SDL_FPoint vector)
 {
     float angle = acosf(vector.x / magnitude(vector));
 
-    return vector.y > 0 ? angle : (float)M_2_PI - angle;
+    return vector.y > 0 ? angle : TWO_PI - angle;
 }
 
 SDL_FPoint operator + (SDL_FPoint lhs, SDL_FPoint rhs)
 {
     return { lhs.x + rhs.x, lhs.y + rhs.y };
+}
+
+SDL_FPoint operator - (SDL_FPoint lhs, SDL_FPoint rhs)
+{
+    return { lhs.x - rhs.x, lhs.y - rhs.y };
 }
 
 SDL_FPoint operator * (float scalar, SDL_FPoint vector)

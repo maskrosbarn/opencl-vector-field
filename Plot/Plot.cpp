@@ -2,18 +2,16 @@
 // Created by Russell Forrest on 20/10/2023.
 //
 
+#include <cstdio>
+
 #include "Plot.hpp"
 #include "misc/BivariateFunction.hpp"
 #include "misc/vector_computation.hpp"
+#include "misc/heat_map_colouring.hpp"
 
 SDL_FPoint Plot::get_graphical_mouse_position () const
 {
     return mouse.position.graphical;
-}
-
-void Plot::set_graphical_mouse_position (SDL_FPoint position)
-{
-    mouse.position.graphical = position;
 }
 
 SDL_FPoint Plot::get_cartesian_mouse_position () const
@@ -21,9 +19,49 @@ SDL_FPoint Plot::get_cartesian_mouse_position () const
     return mouse.position.cartesian;
 }
 
-void Plot::set_cartesian_mouse_position (SDL_FPoint position)
+SDL_FPoint Plot::get_cartesian_mouse_drag_origin () const
 {
-    mouse.position.cartesian = position;
+    return mouse.cartesian_drag_origin;
+}
+
+void Plot::set_cartesian_mouse_drag_origin (SDL_FPoint point)
+{
+    mouse.cartesian_drag_origin = point;
+}
+
+void Plot::set_viewport_cartesian_origin (SDL_FPoint point)
+{
+    viewport.cartesian_origin = point;
+}
+
+bool Plot::mouse_has_left_button_pressed () const
+{
+    return mouse.has_left_button_pressed;
+}
+
+void Plot::set_mouse_left_button_pressed (bool pressed)
+{
+    mouse.has_left_button_pressed = pressed;
+}
+
+SDL_FPoint Plot::get_viewport_cartesian_origin () const
+{
+    return viewport.cartesian_origin;
+}
+
+int Plot::get_viewport_range () const
+{
+    return viewport.range;
+}
+
+SDL_FPoint Plot::get_viewport_cartesian_drag_origin () const
+{
+    return viewport.cartesian_drag_origin;
+}
+
+void Plot::set_viewport_cartesian_drag_origin (SDL_FPoint point)
+{
+    viewport.cartesian_drag_origin = point;
 }
 
 SDL_FPoint Plot::graphical_to_cartesian (SDL_FPoint point) const
@@ -53,14 +91,32 @@ Plot::Plot (SDL_Renderer * renderer, BivariateFunction x_function, BivariateFunc
 
 void Plot::update ()
 {
+    update_mouse_position();
+
+    update_axes();
+
+    update_vector_property_matrix();
+}
+
+void Plot::update_mouse_position ()
+{
     int mouse_x, mouse_y;
     SDL_GetMouseState(&mouse_x, &mouse_y);
 
     mouse.position.graphical = { (float)mouse_x, (float)mouse_y };
 
-    mouse.position.cartesian = {};
+    mouse.position.cartesian = graphical_to_cartesian(mouse.position.graphical);
+}
 
-    update_vector_property_matrix();
+void Plot::update_axes ()
+{
+    axes_position = cartesian_to_graphical({ 0, 0 });
+
+    axes_labels.x.positive.position = viewport.cartesian_origin.x + (float)viewport.range * .5f,
+    axes_labels.x.negative.position = viewport.cartesian_origin.x - (float)viewport.range * .5f;
+
+    axes_labels.y.positive.position = viewport.cartesian_origin.y + (float)viewport.range * .5f,
+    axes_labels.y.negative.position = viewport.cartesian_origin.y - (float)viewport.range * .5f;
 }
 
 void Plot::update_vector_property_matrix ()
@@ -74,9 +130,9 @@ void Plot::update_vector_property_matrix ()
 
     float vector_angle;
 
-    for (size_t row = 0, column; row < SAMPLE_POINT_ROW_COUNT; row++)
+    for (size_t row = 0; row < SAMPLE_POINT_ROW_COUNT; row++)
     {
-        for (column = 0; column < SAMPLE_POINT_COLUMN_COUNT; column++)
+        for (size_t column = 0; column < SAMPLE_POINT_COLUMN_COUNT; column++)
         {
             properties = &vector_properties_matrix[row][column];
 
@@ -87,13 +143,13 @@ void Plot::update_vector_property_matrix ()
 
             cartesian_tail_position = graphical_to_cartesian(properties->tail);
 
-            direction_vector = { x_function(properties->tail), y_function(properties->tail) };
+            direction_vector = { x_function(cartesian_tail_position), y_function(cartesian_tail_position) };
 
             properties->magnitude = magnitude(direction_vector);
 
             if (properties->magnitude > 0)
             {
-                properties->colour = { 0, 0, 0, 1 };
+                properties->colour = { 255, 255, 255, 1 };
 
                 vector_angle = angle(direction_vector);
 
@@ -135,35 +191,26 @@ void Plot::update_vector_property_matrix ()
 
 void Plot::draw () const
 {
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 1);
+    float h = mouse.position.graphical.x / WINDOW_WIDTH;
+
+    SDL_Color c = get_heat_map_colour(h);
+
+    SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, 1);
 
     SDL_FRect p { mouse.position.graphical.x, mouse.position.graphical.y, 50, 50 };
     SDL_RenderDrawRectF(renderer, &p);
 
-    SDL_FPoint points[SAMPLE_POINT_COLUMN_COUNT * SAMPLE_POINT_ROW_COUNT];
-
-    int i = 0;
-
-    for (const auto & row : vector_properties_matrix)
-    {
-        for (const auto & column : row)
-        {
-            points[i] = column.tail;
-
-            i++;
-        }
-    }
-
-    SDL_RenderDrawPointsF(renderer, points, SAMPLE_POINT_COLUMN_COUNT * SAMPLE_POINT_ROW_COUNT);
 
     draw_vector_field();
+    draw_axes();
+    draw_axes_labels();
 }
 
 SDL_FPoint Plot::get_fixed_graphical_length_from_cartesian (SDL_FPoint point, float length, float angle) const
 {
     SDL_FPoint
         graphical_position = cartesian_to_graphical(point),
-        adjustment         = length * (SDL_FPoint ){ cosf(-angle), sinf(-angle) };
+        adjustment         = length * (SDL_FPoint){ cosf(-angle), sinf(-angle) };
 
     return graphical_position + adjustment;
 }
@@ -204,4 +251,23 @@ void Plot::draw_vector (size_t row, size_t column) const
     int vertex_render_indices[] { 0, 1, 2, 1, 2, 3 };
 
     SDL_RenderGeometry(renderer, nullptr, vertices, 4, vertex_render_indices, 6);
+}
+
+void Plot::draw_axes () const
+{
+    SDL_SetRenderDrawColor(
+            renderer,
+            FOREGROUND_COLOUR.r,
+            FOREGROUND_COLOUR.g,
+            FOREGROUND_COLOUR.b,
+            FOREGROUND_COLOUR.a
+            );
+
+    SDL_RenderDrawLineF(renderer, 0, axes_position.y, WINDOW_WIDTH, axes_position.y);
+    SDL_RenderDrawLineF(renderer, axes_position.x, 0, axes_position.x, WINDOW_HEIGHT);
+}
+
+void Plot::draw_axes_labels () const
+{
+    //
 }

@@ -5,6 +5,8 @@
 #ifndef VECTORFIELD_VECTOR_COMPUTATION_HPP
 #define VECTORFIELD_VECTOR_COMPUTATION_HPP
 
+#include <ostream>
+
 #include <SDL.h>
 
 float magnitude (SDL_FPoint);
@@ -12,6 +14,8 @@ float magnitude (SDL_FPoint);
 float angle (SDL_FPoint);
 
 SDL_FPoint operator + (SDL_FPoint, SDL_FPoint);
+
+SDL_FPoint operator - (SDL_FPoint, SDL_FPoint);
 
 SDL_FPoint operator * (float, SDL_FPoint);
 

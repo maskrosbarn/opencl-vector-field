@@ -8,6 +8,7 @@
 
 #include "Application.hpp"
 #include "misc/constants.hpp"
+#include "misc/vector_computation.hpp"
 
 static SDL_Window * get_window ()
 {
@@ -32,7 +33,7 @@ static SDL_Window * get_window ()
 
 static SDL_Renderer * get_renderer (SDL_Window * window)
 {
-    return SDL_CreateRenderer(window, -1, 0);
+    return SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 }
 
 Application::Application (BivariateFunction x_function, BivariateFunction y_function):
@@ -79,11 +80,53 @@ void Application::did_receive_event (SDL_Event event)
             break;
 
         case SDL_MOUSEMOTION:
+            mouse_moved(event.motion);
+            break;
+
+        case SDL_MOUSEBUTTONDOWN:
+            mouse_button_down(event.button);
+            break;
+
+        case SDL_MOUSEBUTTONUP:
+            mouse_button_up(event.button);
             break;
     }
 }
 
 void Application::mouse_moved (SDL_MouseMotionEvent event)
 {
-    //
+    if (plot.mouse_has_left_button_pressed())
+    {
+        SDL_FPoint relative_cartesian_mouse_position = graphical_to_cartesian_space(
+                plot.get_graphical_mouse_position(),
+                plot.get_viewport_cartesian_drag_origin(),
+                plot.get_viewport_range()
+                );
+
+        SDL_FPoint cartesian_drag_delta = plot.get_cartesian_mouse_drag_origin() - relative_cartesian_mouse_position;
+
+        plot.set_viewport_cartesian_origin(plot.get_viewport_cartesian_drag_origin() + cartesian_drag_delta);
+    }
+}
+
+void Application::mouse_button_down (SDL_MouseButtonEvent event)
+{
+    switch (event.button)
+    {
+        case SDL_BUTTON_LEFT:
+            plot.set_mouse_left_button_pressed(true);
+            plot.set_cartesian_mouse_drag_origin(plot.get_cartesian_mouse_position());
+            plot.set_viewport_cartesian_drag_origin(plot.get_viewport_cartesian_origin());
+            break;
+    }
+}
+
+void Application::mouse_button_up (SDL_MouseButtonEvent event)
+{
+    switch (event.button)
+    {
+        case SDL_BUTTON_LEFT:
+            plot.set_mouse_left_button_pressed(false);
+            break;
+    }
 }
