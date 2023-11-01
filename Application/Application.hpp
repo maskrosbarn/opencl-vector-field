@@ -32,6 +32,7 @@ private:
     void mouse_moved (SDL_MouseMotionEvent);
     void mouse_button_down (SDL_MouseButtonEvent);
     void mouse_button_up (SDL_MouseButtonEvent);
+    void mouse_wheel_moved (SDL_MouseWheelEvent);
 };
 
 

@@ -27,12 +27,13 @@ public:
 
     [[nodiscard]] SDL_FPoint get_viewport_cartesian_origin () const;
 
-    [[nodiscard]] int get_viewport_range () const;
+    void set_viewport_cartesian_origin (SDL_FPoint);
 
     [[nodiscard]] SDL_FPoint get_viewport_cartesian_drag_origin () const;
     void set_viewport_cartesian_drag_origin (SDL_FPoint);
 
-    void set_viewport_cartesian_origin (SDL_FPoint);
+    [[nodiscard]] int get_viewport_range () const;
+    void set_viewport_range (int);
 
     [[nodiscard]] SDL_FPoint
         graphical_to_cartesian (SDL_FPoint) const,

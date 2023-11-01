@@ -37,5 +37,9 @@ constexpr float
 
 constexpr float AXES_LABEL_MARGIN = 5.f;
 
+const int
+    VIEWPORT_MAXIMUM_RANGE = 100,
+    VIEWPORT_MINIMUM_RANGE = 1;
+
 
 #endif //VECTORFIELD_CONSTANTS_HPP

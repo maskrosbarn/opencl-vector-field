@@ -29,11 +29,6 @@ void Plot::set_cartesian_mouse_drag_origin (SDL_FPoint point)
     mouse.cartesian_drag_origin = point;
 }
 
-void Plot::set_viewport_cartesian_origin (SDL_FPoint point)
-{
-    viewport.cartesian_origin = point;
-}
-
 bool Plot::mouse_has_left_button_pressed () const
 {
     return mouse.has_left_button_pressed;
@@ -49,9 +44,9 @@ SDL_FPoint Plot::get_viewport_cartesian_origin () const
     return viewport.cartesian_origin;
 }
 
-int Plot::get_viewport_range () const
+void Plot::set_viewport_cartesian_origin (SDL_FPoint point)
 {
-    return viewport.range;
+    viewport.cartesian_origin = point;
 }
 
 SDL_FPoint Plot::get_viewport_cartesian_drag_origin () const
@@ -62,6 +57,16 @@ SDL_FPoint Plot::get_viewport_cartesian_drag_origin () const
 void Plot::set_viewport_cartesian_drag_origin (SDL_FPoint point)
 {
     viewport.cartesian_drag_origin = point;
+}
+
+int Plot::get_viewport_range () const
+{
+    return viewport.range;
+}
+
+void Plot::set_viewport_range (int range)
+{
+    viewport.range = std::clamp(range, VIEWPORT_MINIMUM_RANGE, VIEWPORT_MAXIMUM_RANGE);
 }
 
 SDL_FPoint Plot::graphical_to_cartesian (SDL_FPoint point) const

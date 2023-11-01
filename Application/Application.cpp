@@ -90,6 +90,10 @@ void Application::did_receive_event (SDL_Event event)
         case SDL_MOUSEBUTTONUP:
             mouse_button_up(event.button);
             break;
+
+        case SDL_MOUSEWHEEL:
+            mouse_wheel_moved(event.wheel);
+            break;
     }
 }
 
@@ -129,4 +133,9 @@ void Application::mouse_button_up (SDL_MouseButtonEvent event)
             plot.set_mouse_left_button_pressed(false);
             break;
     }
+}
+
+void Application::mouse_wheel_moved (SDL_MouseWheelEvent event)
+{
+    plot.set_viewport_range(plot.get_viewport_range() - (int)event.preciseY);
 }
