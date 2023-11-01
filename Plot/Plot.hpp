@@ -15,6 +15,8 @@
 class Plot
 {
 public:
+    void update_on_next_pass ();
+
     [[nodiscard]] SDL_FPoint get_graphical_mouse_position () const;
     [[nodiscard]] SDL_FPoint get_cartesian_mouse_position () const;
 
@@ -57,12 +59,16 @@ private:
     {
         float magnitude;
 
-        SDL_Color colour;
-
         SDL_FPoint tail, head, head_left, head_right, tip;
     };
 
     VectorProperties vector_properties_matrix[SAMPLE_POINT_ROW_COUNT][SAMPLE_POINT_COLUMN_COUNT] {};
+
+    bool needs_update = true;
+
+    float
+        maximum_sample_point_magnitude,
+        minimum_sample_point_magnitude;
 
     struct
     {

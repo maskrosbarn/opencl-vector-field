@@ -110,6 +110,8 @@ void Application::mouse_moved (SDL_MouseMotionEvent event)
         SDL_FPoint cartesian_drag_delta = plot.get_cartesian_mouse_drag_origin() - relative_cartesian_mouse_position;
 
         plot.set_viewport_cartesian_origin(plot.get_viewport_cartesian_drag_origin() + cartesian_drag_delta);
+
+        plot.update_on_next_pass();
     }
 }
 
@@ -138,4 +140,6 @@ void Application::mouse_button_up (SDL_MouseButtonEvent event)
 void Application::mouse_wheel_moved (SDL_MouseWheelEvent event)
 {
     plot.set_viewport_range(plot.get_viewport_range() - (int)event.preciseY);
+
+    plot.update_on_next_pass();
 }

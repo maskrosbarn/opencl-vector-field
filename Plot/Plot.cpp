@@ -9,6 +9,11 @@
 #include "misc/vector_computation.hpp"
 #include "misc/heat_map_colouring.hpp"
 
+void Plot::update_on_next_pass ()
+{
+    needs_update = true;
+}
+
 SDL_FPoint Plot::get_graphical_mouse_position () const
 {
     return mouse.position.graphical;
@@ -100,9 +105,14 @@ void Plot::update ()
 {
     update_mouse_position();
 
-    update_axes();
+    if (needs_update)
+    {
+        update_axes();
 
-    update_vector_property_matrix();
+        update_vector_property_matrix();
+
+        needs_update = false;
+    }
 }
 
 SDL_FPoint Plot::get_fixed_graphical_length_from_cartesian (SDL_FPoint point, float length, float angle) const
@@ -208,65 +218,65 @@ void Plot::update_vector_property_matrix ()
         direction_vector,
         cartesian_head_position;
 
-    float vector_angle;
+    float vector_angle, vector_magnitude;
+
+    maximum_sample_point_magnitude = minimum_sample_point_magnitude = 0;
 
     for (size_t row = 0; row < SAMPLE_POINT_ROW_COUNT; row++)
-    {
         for (size_t column = 0; column < SAMPLE_POINT_COLUMN_COUNT; column++)
         {
             properties = &vector_properties_matrix[row][column];
 
             properties->tail = {
-                    (2 * (float)column + 1) * WINDOW_WIDTH / (2 * SAMPLE_POINT_COLUMN_COUNT),
-                    (2 * (float)row + 1) * WINDOW_HEIGHT / (2 * SAMPLE_POINT_ROW_COUNT)
+                    (2 * (float) column + 1) * WINDOW_WIDTH / (2 * SAMPLE_POINT_COLUMN_COUNT),
+                    (2 * (float) row + 1) * WINDOW_HEIGHT / (2 * SAMPLE_POINT_ROW_COUNT)
             };
 
             cartesian_tail_position = graphical_to_cartesian(properties->tail);
 
             direction_vector = { x_function(cartesian_tail_position), y_function(cartesian_tail_position) };
 
-            properties->magnitude = magnitude(direction_vector);
+            vector_magnitude = magnitude(direction_vector);
 
-            if (properties->magnitude > 0)
+            properties->magnitude = vector_magnitude;
+
+            if (vector_magnitude > maximum_sample_point_magnitude)
+                maximum_sample_point_magnitude = vector_magnitude;
+
+            else if (vector_magnitude < minimum_sample_point_magnitude)
+                minimum_sample_point_magnitude = vector_magnitude;
+
+            if (vector_magnitude > 0)
             {
-                properties->colour = { 255, 255, 255, 1 };
-
                 vector_angle = angle(direction_vector);
 
                 properties->head = get_fixed_graphical_length_from_cartesian(
                         cartesian_tail_position,
                         VECTOR_ARROW_BODY_LENGTH,
                         vector_angle
-                        );
+                );
 
                 cartesian_head_position = graphical_to_cartesian(properties->head);
 
                 properties->head_left = get_fixed_graphical_length_from_cartesian(
                         cartesian_head_position,
                         VECTOR_ARROW_HEAD_HALF_WIDTH,
-                        vector_angle - (float)M_PI_4
-                        );
+                        vector_angle - (float) M_PI_4
+                );
 
                 properties->head_right = get_fixed_graphical_length_from_cartesian(
                         cartesian_head_position,
                         VECTOR_ARROW_HEAD_HALF_WIDTH,
-                        vector_angle + (float)M_PI_4
-                        );
+                        vector_angle + (float) M_PI_4
+                );
 
                 properties->tip = get_fixed_graphical_length_from_cartesian(
                         cartesian_head_position,
                         VECTOR_ARROW_HEAD_LENGTH,
                         vector_angle
-                        );
+                );
             }
-            else
-            {
-                properties->colour = { 0, 0, 0, 1 };
-            }
-
-            //cartesian_head_position = cartesian_tail_position + direction_vector;
         }
-    }
 }
 
 void Plot::draw () const
@@ -295,11 +305,13 @@ void Plot::draw_vector_field () const
     }
 }
 
-void Plot::draw_vector (size_t row, size_t column) const
+void Plot::draw_vector (size_t sample_point_row, size_t sample_point_column) const
 {
-    VectorProperties vector_properties = vector_properties_matrix[row][column];
+    VectorProperties vector_properties = vector_properties_matrix[sample_point_row][sample_point_column];
 
-    SDL_Color colour = vector_properties.colour;
+    SDL_Color colour = get_heat_map_colour(
+            (vector_properties.magnitude - minimum_sample_point_magnitude) / (maximum_sample_point_magnitude - minimum_sample_point_magnitude)
+            );
 
     SDL_SetRenderDrawColor(renderer, colour.r, colour.g, colour.b, colour.a);
 
@@ -319,10 +331,9 @@ void Plot::draw_vector (size_t row, size_t column) const
             {tip,        colour, { 0 } }
     };
 
-    int vertex_render_indices[]{0, 1, 2, 1, 2, 3};
+    int vertex_render_indices[] {0, 1, 2, 1, 2, 3};
 
     SDL_RenderGeometry(renderer, nullptr, vertices, 4, vertex_render_indices, 6);
-
 }
 
 void Plot::draw_axes () const
