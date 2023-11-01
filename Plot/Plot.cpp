@@ -82,11 +82,13 @@ Plot::Plot (SDL_Renderer * renderer, BivariateFunction x_function, BivariateFunc
     FC_LoadFont(
             font,
             renderer,
-            FONT_FILE_NAME,
+            FONT_FILE_PATH,
             FONT_SIZE,
             FOREGROUND_COLOUR,
             TTF_STYLE_NORMAL
             );
+
+    font_line_height = FC_GetLineHeight(font);
 }
 
 void Plot::update ()
@@ -96,6 +98,15 @@ void Plot::update ()
     update_axes();
 
     update_vector_property_matrix();
+}
+
+SDL_FPoint Plot::get_fixed_graphical_length_from_cartesian (SDL_FPoint point, float length, float angle) const
+{
+    SDL_FPoint
+            graphical_position = cartesian_to_graphical(point),
+            adjustment         = length * (SDL_FPoint){ cosf(-angle), sinf(-angle) };
+
+    return graphical_position + adjustment;
 }
 
 void Plot::update_mouse_position ()
@@ -112,11 +123,75 @@ void Plot::update_axes ()
 {
     axes_position = cartesian_to_graphical({ 0, 0 });
 
-    axes_labels.x.positive.position = viewport.cartesian_origin.x + (float)viewport.range * .5f,
-    axes_labels.x.negative.position = viewport.cartesian_origin.x - (float)viewport.range * .5f;
+    axes_position = {
+            std::clamp(axes_position.x, 0.f, WINDOW_WIDTH),
+            std::clamp(axes_position.y, 0.f, WINDOW_HEIGHT)
+    };
 
-    axes_labels.y.positive.position = viewport.cartesian_origin.y + (float)viewport.range * .5f,
-    axes_labels.y.negative.position = viewport.cartesian_origin.y - (float)viewport.range * .5f;
+    axes_labels.x.positive.label_value = viewport.cartesian_origin.x + (float)viewport.range * .5f;
+    axes_labels.x.negative.label_value = viewport.cartesian_origin.x - (float)viewport.range * .5f;
+    axes_labels.y.positive.label_value = viewport.cartesian_origin.y + (float)viewport.range * .5f;
+    axes_labels.y.negative.label_value = viewport.cartesian_origin.y - (float)viewport.range * .5f;
+
+    float
+        positive_x_text_width = FC_GetWidth(font, axes_labels.text_format, axes_labels.x.positive.label_value),
+        negative_x_text_width = FC_GetWidth(font, axes_labels.text_format, axes_labels.x.negative.label_value),
+        positive_y_text_width = FC_GetWidth(font, axes_labels.text_format, axes_labels.y.positive.label_value),
+        negative_y_text_width = FC_GetWidth(font, axes_labels.text_format, axes_labels.y.negative.label_value);
+
+    //
+    //
+    //
+
+    float x_label_y_position;
+
+    if (axes_position.y > WINDOW_HEIGHT - font_line_height - AXES_LABEL_MARGIN)
+    {
+        x_label_y_position = axes_position.y - font_line_height - AXES_LABEL_MARGIN;
+    }
+    else
+        x_label_y_position = axes_position.y + AXES_LABEL_MARGIN;
+
+    axes_labels.x.positive.position = { WINDOW_WIDTH - positive_x_text_width - AXES_LABEL_MARGIN, x_label_y_position };
+    axes_labels.x.negative.position = { AXES_LABEL_MARGIN, x_label_y_position };
+
+    //
+    //
+    //
+
+    float y_label_x_position;
+
+    float greatest_label_width = fmax(positive_y_text_width, negative_y_text_width);
+
+    if (axes_position.x > WINDOW_WIDTH - greatest_label_width)
+        y_label_x_position = axes_position.x - greatest_label_width + AXES_LABEL_MARGIN;
+
+    else
+        y_label_x_position = axes_position.x + AXES_LABEL_MARGIN;
+
+    axes_labels.y.positive.position = { y_label_x_position, AXES_LABEL_MARGIN };
+    axes_labels.y.negative.position = { y_label_x_position, WINDOW_HEIGHT - AXES_LABEL_MARGIN - font_line_height };
+
+    // fixme: how the hell can the axis label pinning be seamless?
+
+    if (axes_position.x < negative_y_text_width + 2 * AXES_LABEL_MARGIN && axes_position.y < font_line_height + 2 * AXES_LABEL_MARGIN)
+    {
+        axes_labels.x.negative.position.y = font_line_height + 2 * AXES_LABEL_MARGIN;
+        axes_labels.y.positive.position.x = negative_x_text_width + 2 * AXES_LABEL_MARGIN;
+    }
+    else if (axes_position.x > WINDOW_WIDTH - positive_x_text_width - 2 * AXES_LABEL_MARGIN && axes_position.y > WINDOW_HEIGHT - font_line_height - 2 * AXES_LABEL_MARGIN)
+    {
+        axes_labels.x.positive.position.x = WINDOW_WIDTH - AXES_LABEL_MARGIN - positive_y_text_width;
+        axes_labels.y.negative.position.y = WINDOW_HEIGHT - font_line_height - 2 * AXES_LABEL_MARGIN;
+    }
+    else if (axes_position.x == 0 && axes_position.y == WINDOW_HEIGHT)
+    {
+        //
+    }
+    else if (axes_position.x == WINDOW_WIDTH && axes_position.y == 0)
+    {
+        //
+    }
 }
 
 void Plot::update_vector_property_matrix ()
@@ -206,15 +281,6 @@ void Plot::draw () const
     draw_axes_labels();
 }
 
-SDL_FPoint Plot::get_fixed_graphical_length_from_cartesian (SDL_FPoint point, float length, float angle) const
-{
-    SDL_FPoint
-        graphical_position = cartesian_to_graphical(point),
-        adjustment         = length * (SDL_FPoint){ cosf(-angle), sinf(-angle) };
-
-    return graphical_position + adjustment;
-}
-
 void Plot::draw_vector_field () const
 {
     for (size_t row = 0; row < SAMPLE_POINT_ROW_COUNT; row++)
@@ -233,24 +299,25 @@ void Plot::draw_vector (size_t row, size_t column) const
     SDL_SetRenderDrawColor(renderer, colour.r, colour.g, colour.b, colour.a);
 
     SDL_FPoint
-        tail       = vector_properties.tail,
-        head       = vector_properties.head,
-        head_left  = vector_properties.head_left,
-        head_right = vector_properties.head_right,
-        tip        = vector_properties.tip;
+            tail = vector_properties.tail,
+            head = vector_properties.head,
+            head_left = vector_properties.head_left,
+            head_right = vector_properties.head_right,
+            tip = vector_properties.tip;
 
     SDL_RenderDrawLineF(renderer, tail.x, tail.y, head.x, head.y);
 
     SDL_Vertex vertices[] {
-            { head, colour, { 0 } },
-            { head_left, colour, { 0 } },
-            { head_right, colour, { 0 } },
-            { tip, colour, { 0 } }
+            {head,       colour, { 0 } },
+            {head_left,  colour, { 0 } },
+            {head_right, colour, { 0 } },
+            {tip,        colour, { 0 } }
     };
 
-    int vertex_render_indices[] { 0, 1, 2, 1, 2, 3 };
+    int vertex_render_indices[]{0, 1, 2, 1, 2, 3};
 
     SDL_RenderGeometry(renderer, nullptr, vertices, 4, vertex_render_indices, 6);
+
 }
 
 void Plot::draw_axes () const
@@ -265,6 +332,42 @@ void Plot::draw_axes () const
 
     SDL_RenderDrawLineF(renderer, 0, axes_position.y, WINDOW_WIDTH, axes_position.y);
     SDL_RenderDrawLineF(renderer, axes_position.x, 0, axes_position.x, WINDOW_HEIGHT);
+
+    FC_Draw(
+            font,
+            renderer,
+            axes_labels.x.positive.position.x,
+            axes_labels.x.positive.position.y,
+            axes_labels.text_format,
+            axes_labels.x.positive.label_value
+            );
+
+    FC_Draw(
+            font,
+            renderer,
+            axes_labels.x.negative.position.x,
+            axes_labels.x.negative.position.y,
+            axes_labels.text_format,
+            axes_labels.x.negative.label_value
+    );
+
+    FC_Draw(
+            font,
+            renderer,
+            axes_labels.y.positive.position.x,
+            axes_labels.y.positive.position.y,
+            axes_labels.text_format,
+            axes_labels.y.positive.label_value
+    );
+
+    FC_Draw(
+            font,
+            renderer,
+            axes_labels.y.negative.position.x,
+            axes_labels.y.negative.position.y,
+            axes_labels.text_format,
+            axes_labels.y.negative.label_value
+    );
 }
 
 void Plot::draw_axes_labels () const

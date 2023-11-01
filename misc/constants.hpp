@@ -12,9 +12,9 @@
 
 constexpr float
     WINDOW_WIDTH  = 950,
-    WINDOW_HEIGHT = 800;
+    WINDOW_HEIGHT = 950;
 
-const char * const FONT_FILE_NAME = "Monaco.ttf";
+const char * const FONT_FILE_PATH = "/System/Library/Fonts/Monaco.ttf";
 
 constexpr float FONT_SIZE = 14.f;
 
@@ -23,8 +23,8 @@ const SDL_Color
     FOREGROUND_COLOUR = { 255, 255, 255, 255 };
 
 const int
-    SAMPLE_POINT_ROW_COUNT    = 35,
-    SAMPLE_POINT_COLUMN_COUNT = 35;
+    SAMPLE_POINT_ROW_COUNT    = 40,
+    SAMPLE_POINT_COLUMN_COUNT = 40;
 
 constexpr float
     SAMPLE_POINT_ROW_SPACING    = WINDOW_HEIGHT / SAMPLE_POINT_ROW_COUNT,
@@ -34,6 +34,8 @@ constexpr float
     VECTOR_ARROW_BODY_LENGTH     = 8.f,
     VECTOR_ARROW_HEAD_LENGTH     = 6.f,
     VECTOR_ARROW_HEAD_HALF_WIDTH = 3.F;
+
+constexpr float AXES_LABEL_MARGIN = 5.f;
 
 
 #endif //VECTORFIELD_CONSTANTS_HPP

@@ -48,7 +48,7 @@ private:
     SDL_Renderer * renderer;
 
     FC_Font * const font = FC_CreateFont();
-    const int font_line_height = FC_GetLineHeight(font);
+    float font_line_height;
 
     BivariateFunction x_function, y_function;
 
@@ -61,7 +61,7 @@ private:
         SDL_FPoint tail, head, head_left, head_right, tip;
     };
 
-    VectorProperties vector_properties_matrix[SAMPLE_POINT_ROW_COUNT][SAMPLE_POINT_COLUMN_COUNT];
+    VectorProperties vector_properties_matrix[SAMPLE_POINT_ROW_COUNT][SAMPLE_POINT_COLUMN_COUNT] {};
 
     struct
     {
@@ -88,20 +88,24 @@ private:
 
     struct
     {
-        const char * text_format = "(%.1f, %.1f)";
+        const char * text_format = "%.1f";
 
         struct
         {
             struct
             {
-                float position = 0;
+                float label_value = 0;
                 int text_width = 0;
+
+                SDL_FPoint position { 0, 0 };
             } positive;
 
             struct
             {
-                float position = 0;
+                float label_value = 0;
                 int text_width = 0;
+
+                SDL_FPoint position { 0, 0 };
             } negative;
         } x;
 
@@ -109,14 +113,18 @@ private:
         {
             struct
             {
-                float position = 0;
+                float label_value = 0;
                 int text_width = 0;
+
+                SDL_FPoint position { 0, 0 };
             } positive;
 
             struct
             {
-                float position = 0;
+                float label_value = 0;
                 int text_width = 0;
+
+                SDL_FPoint position { 0, 0 };
             } negative;
         } y;
     } axes_labels;
@@ -127,6 +135,7 @@ private:
 
     void update_mouse_position ();
     void update_axes ();
+    void update_axes_labels ();
     void update_vector_property_matrix ();
 
     void draw_vector_field () const;
