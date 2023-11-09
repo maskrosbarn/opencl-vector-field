@@ -17,9 +17,13 @@ add_executable(VectorField main.cpp
         misc/vector_computation.hpp
         misc/vector_computation.cpp
         misc/heat_map_colouring.hpp
-        misc/heat_map_colouring.cpp)
+        misc/heat_map_colouring.cpp
+        ParticleEngine/ParticleEngine.cpp
+        ParticleEngine/ParticleEngine.hpp)
 
 target_include_directories (VectorField PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+find_package(OpenCL REQUIRED)
 
 include_directories(
         /Library/Frameworks/SDL2.framework/Versions/A/Headers

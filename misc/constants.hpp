@@ -41,5 +41,11 @@ const int
     VIEWPORT_MAXIMUM_RANGE = 100,
     VIEWPORT_MINIMUM_RANGE = 1;
 
+const int
+    PARTICLE_COUNT = 100,
+    PARTICLE_TRAIL_LENGTH = 10;
+
+const char * const OPENCL_RUNGE_KUTTA_KERNEL_FILE_PATH = "/Users/forrest/CLionProjects/VectorField/kernels/runge_kutta.cl";
+
 
 #endif //VECTORFIELD_CONSTANTS_HPP

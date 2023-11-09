@@ -39,7 +39,8 @@ static SDL_Renderer * get_renderer (SDL_Window * window)
 Application::Application (BivariateFunction x_function, BivariateFunction y_function):
     window   { get_window() },
     renderer { get_renderer(window) },
-    plot (renderer, x_function, y_function)
+    plot (renderer, x_function, y_function),
+    particle_engine(renderer, &plot)
 {
     main();
 }
@@ -53,8 +54,10 @@ void Application::main ()
         SDL_RenderClear(renderer);
 
         plot.update();
-
         plot.draw();
+
+        particle_engine.update();
+        particle_engine.draw();
 
         SDL_SetRenderDrawColor(
                 renderer,

@@ -293,7 +293,6 @@ void Plot::draw () const
 
     draw_vector_field();
     draw_axes();
-    draw_axes_labels();
 }
 
 void Plot::draw_vector_field () const
@@ -324,16 +323,16 @@ void Plot::draw_vector (size_t sample_point_row, size_t sample_point_column) con
 
     SDL_RenderDrawLineF(renderer, tail.x, tail.y, head.x, head.y);
 
-    SDL_Vertex vertices[] {
-            {head,       colour, { 0 } },
-            {head_left,  colour, { 0 } },
-            {head_right, colour, { 0 } },
-            {tip,        colour, { 0 } }
+    std::array<SDL_Vertex, 4> vertices = {
+            SDL_Vertex {head,       colour, { 0 } },
+            SDL_Vertex {head_left,  colour, { 0 } },
+            SDL_Vertex {head_right, colour, { 0 } },
+            SDL_Vertex {tip,        colour, { 0 } }
     };
 
     int vertex_render_indices[] {0, 1, 2, 1, 2, 3};
 
-    SDL_RenderGeometry(renderer, nullptr, vertices, 4, vertex_render_indices, 6);
+    SDL_RenderGeometry(renderer, nullptr, vertices.data(), 4, vertex_render_indices, 6);
 }
 
 void Plot::draw_axes () const
@@ -384,9 +383,4 @@ void Plot::draw_axes () const
             axes_labels.text_format,
             axes_labels.y.negative.label_value
     );
-}
-
-void Plot::draw_axes_labels () const
-{
-    //
 }

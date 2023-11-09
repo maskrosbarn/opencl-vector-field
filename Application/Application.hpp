@@ -10,6 +10,7 @@
 
 #include "misc/BivariateFunction.hpp"
 #include "Plot/Plot.hpp"
+#include "ParticleEngine/ParticleEngine.hpp"
 
 class Application
 {
@@ -24,6 +25,8 @@ private:
     bool is_running = true;
 
     Plot plot;
+
+    ParticleEngine particle_engine;
 
     void main ();
 

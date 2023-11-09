@@ -5,6 +5,7 @@
 #ifndef VECTORFIELD_PLOT_HPP
 #define VECTORFIELD_PLOT_HPP
 
+#include <array>
 
 #include <SDL.h>
 
@@ -62,13 +63,13 @@ private:
         SDL_FPoint tail, head, head_left, head_right, tip;
     };
 
-    VectorProperties vector_properties_matrix[SAMPLE_POINT_ROW_COUNT][SAMPLE_POINT_COLUMN_COUNT] {};
+    std::array<std::array<VectorProperties, SAMPLE_POINT_COLUMN_COUNT>, SAMPLE_POINT_ROW_COUNT> vector_properties_matrix {};
 
     bool needs_update = true;
 
     float
-        maximum_sample_point_magnitude,
-        minimum_sample_point_magnitude;
+        maximum_sample_point_magnitude = 0,
+        minimum_sample_point_magnitude = 0;
 
     struct
     {
@@ -142,14 +143,12 @@ private:
 
     void update_mouse_position ();
     void update_axes ();
-    void update_axes_labels ();
     void update_vector_property_matrix ();
 
     void draw_vector_field () const;
     void draw_vector (size_t, size_t) const;
 
     void draw_axes () const;
-    void draw_axes_labels () const;
 };
 
 
