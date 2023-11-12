@@ -13,16 +13,16 @@ ParticleEngine::ParticleEngine (SDL_Renderer * renderer, Plot * plot):
     renderer { renderer },
     plot     { plot }
 {
-    /*cl::Device gpu_device = OpenCL::get_gpu_devices()[0];
+    cl::Device gpu_device = OpenCL::get_gpu_devices()[0];
 
-    std::ifstream kernel_file_contents ("/Users/forrest/CLionProjects/VectorField/kernels/runge_kutta.cl");
+    std::ifstream kernel_file_contents (OPENCL_KERNEL_FILE_PATH);
 
     std::string source (
             std::istreambuf_iterator<char>(kernel_file_contents),
             (std::istreambuf_iterator<char>())
     );
 
-    std::printf("%s", source.c_str());
+    std::printf("%s\n", source.c_str());
 
     cl::Program::Sources sources { source };
 
@@ -41,9 +41,9 @@ ParticleEngine::ParticleEngine (SDL_Renderer * renderer, Plot * plot):
 
     cl::Buffer a (context, CL_MEM_WRITE_ONLY | CL_MEM_HOST_READ_ONLY, sizeof(int));
 
-    int result;
+    SDL_FPoint result[10];
 
-    cl::Kernel kernel (program, "test");
+    cl::Kernel kernel (program, "update_particle_position_matrix");
     kernel.setArg(0, a);
 
     cl::CommandQueue command_queue (context, gpu_device);
@@ -51,10 +51,10 @@ ParticleEngine::ParticleEngine (SDL_Renderer * renderer, Plot * plot):
     for (int i = 0; i < 10; i++)
     {
         command_queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(1));
-        command_queue.enqueueReadBuffer(a, CL_TRUE, 0, sizeof(int), &result);
+        command_queue.enqueueReadBuffer(a, CL_TRUE, 0, sizeof(int), particle_cartesian_positions.data());
 
-        std::printf("%d\n", result);
-    }*/
+        std::printf("%f\n", particle_cartesian_positions[0].x);
+    }
 }
 
 void ParticleEngine::update ()
@@ -93,7 +93,7 @@ std::vector<cl::Device> ParticleEngine::get_opencl_gpu_devices ()
 
 cl::Program ParticleEngine::get_opencl_runge_kutta_program (cl::Device const & gpu_device)
 {
-    std::ifstream kernel_file (OPENCL_RUNGE_KUTTA_KERNEL_FILE_PATH);
+    std::ifstream kernel_file (OPENCL_KERNEL_FILE_PATH);
 
     std::string kernel_file_contents (
             std::istreambuf_iterator<char>(kernel_file),
@@ -110,7 +110,7 @@ cl::Program ParticleEngine::get_opencl_runge_kutta_program (cl::Device const & g
     if (build_status == CL_BUILD_SUCCESS)
         std::printf(
                 "Built OpenCL kernel at: %s\n\n%s\n\nfor GPU: %s\n\n",
-                OPENCL_RUNGE_KUTTA_KERNEL_FILE_PATH,
+                OPENCL_KERNEL_FILE_PATH,
                 kernel_file_contents.c_str(),
                 gpu_device.getInfo<CL_DEVICE_NAME>().c_str()
                 );

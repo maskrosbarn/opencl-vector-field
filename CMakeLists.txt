@@ -3,6 +3,20 @@ project(VectorField)
 
 set(CMAKE_CXX_STANDARD 23)
 
+find_package(Python3 COMPONENTS Interpreter)
+
+message("t=" ${PROJECT_SOURCE_DIR})
+
+#execute_process(
+#        WORKING_DIRECTORY /Users/forrest/CLionProjects/VectorField/
+#        COMMAND ${Python3_EXECUTABLE} init.py)
+
+add_custom_command(
+        OUTPUT "${PROJECT_SOURCE_DIR}/kernels/particle_position_update.cl"
+        COMMAND "${Python_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/scripts/get_opencl_kernel_file.py"
+)
+
+
 add_executable(VectorField main.cpp
         lib/SDL_FontCache/SDL_FontCache.h
         lib/SDL_FontCache/SDL_FontCache.c

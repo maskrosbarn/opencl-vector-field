@@ -31,16 +31,11 @@ private:
 
     Plot * plot;
 
-    cl::Kernel opencl_runge_kutta_kernel;
+    cl::Kernel       opencl_particle_update_kernel;
     cl::CommandQueue opencl_gpu_command_queue;
-    cl::Buffer particle_positions_memory_buffer;
+    cl::Buffer       opencl_particle_positions_memory_buffer;
 
-    typedef struct Point
-    {
-        float x, y;
-    } Point;
-
-    std::array<Point, PARTICLE_TRAIL_LENGTH * PARTICLE_COUNT> particle_positions {};
+    std::array<SDL_FPoint, PARTICLE_TRAIL_LENGTH * PARTICLE_COUNT> particle_cartesian_positions {};
 
     static std::vector<cl::Device> get_opencl_gpu_devices ();
     static cl::Program get_opencl_runge_kutta_program (cl::Device const &);
