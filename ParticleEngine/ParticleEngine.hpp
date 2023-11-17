@@ -33,9 +33,21 @@ private:
 
     cl::Kernel       opencl_particle_update_kernel;
     cl::CommandQueue opencl_gpu_command_queue;
-    cl::Buffer       opencl_particle_positions_memory_buffer;
 
-    std::array<SDL_FPoint, PARTICLE_TRAIL_LENGTH * PARTICLE_COUNT> particle_cartesian_positions {};
+    struct
+    {
+        cl::Buffer graphical;
+        cl::Buffer cartesian;
+        cl::Buffer particle_visibility;
+    } opencl_buffer;
+
+    struct
+    {
+        std::array<SDL_FPoint, PARTICLE_TRAIL_LENGTH * PARTICLE_COUNT> graphical {};
+        std::array<SDL_FPoint, PARTICLE_TRAIL_LENGTH * PARTICLE_COUNT> cartesian {};
+    } particle_positions;
+
+    std::array<bool, PARTICLE_COUNT> particle_visibility_flags {};
 
     static std::vector<cl::Device> get_opencl_gpu_devices ();
     static cl::Program get_opencl_runge_kutta_program (cl::Device const &);

@@ -3,19 +3,7 @@ project(VectorField)
 
 set(CMAKE_CXX_STANDARD 23)
 
-find_package(Python3 COMPONENTS Interpreter)
-
-message("t=" ${PROJECT_SOURCE_DIR})
-
-#execute_process(
-#        WORKING_DIRECTORY /Users/forrest/CLionProjects/VectorField/
-#        COMMAND ${Python3_EXECUTABLE} init.py)
-
-add_custom_command(
-        OUTPUT "${PROJECT_SOURCE_DIR}/kernels/particle_position_update.cl"
-        COMMAND "${Python_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/scripts/get_opencl_kernel_file.py"
-)
-
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Functions)
 
 add_executable(VectorField main.cpp
         lib/SDL_FontCache/SDL_FontCache.h
@@ -32,8 +20,22 @@ add_executable(VectorField main.cpp
         misc/vector_computation.cpp
         misc/heat_map_colouring.hpp
         misc/heat_map_colouring.cpp
-        ParticleEngine/ParticleEngine.cpp
-        ParticleEngine/ParticleEngine.hpp)
+        ParticleEngine/ParticleEngine.hpp
+        ParticleEngine/ParticleEngine.cpp)
+
+find_package(Python3 COMPONENTS Interpreter)
+
+add_custom_target(MainConfiguration
+        BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/main.cpp
+        COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/get_main_cpp_file.py ${CMAKE_CURRENT_SOURCE_DIR}/Functions > ${CMAKE_CURRENT_BINARY_DIR}/main.cpp
+)
+
+add_custom_target(KernelConfiguration
+        BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/kernels/particle_motion_computation.cl
+        COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/get_particle_motion_kernel_file.py ${CMAKE_CURRENT_SOURCE_DIR}/Functions > ${CMAKE_CURRENT_BINARY_DIR}/kernels/particle_motion_computation.cl
+)
+
+add_dependencies(VectorField MainConfiguration KernelConfiguration)
 
 target_include_directories (VectorField PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

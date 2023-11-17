@@ -13,7 +13,7 @@ ParticleEngine::ParticleEngine (SDL_Renderer * renderer, Plot * plot):
     renderer { renderer },
     plot     { plot }
 {
-    cl::Device gpu_device = OpenCL::get_gpu_devices()[0];
+    /*cl::Device gpu_device = OpenCL::get_gpu_devices()[0];
 
     std::ifstream kernel_file_contents (OPENCL_KERNEL_FILE_PATH);
 
@@ -54,7 +54,7 @@ ParticleEngine::ParticleEngine (SDL_Renderer * renderer, Plot * plot):
         command_queue.enqueueReadBuffer(a, CL_TRUE, 0, sizeof(int), particle_cartesian_positions.data());
 
         std::printf("%f\n", particle_cartesian_positions[0].x);
-    }
+    }*/
 }
 
 void ParticleEngine::update ()
