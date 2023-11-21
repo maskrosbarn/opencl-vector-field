@@ -24,48 +24,7 @@ ParticleEngine::ParticleEngine (SDL_Renderer * renderer, Plot * plot):
 {
     gpu_kernel.setArg(CARTESIAN_POSITION_BUFFER, cartesian_positions_buffer);
     gpu_kernel.setArg(GRAPHICAL_POSITION_BUFFER, graphical_positions_buffer);
-
-    /*
-    cl::Device gpu_device = OpenCL::get_gpu_devices()[0];
-
-    cl::Context context = cl::Context(gpu_device);
-
-    std::ifstream kernel_file_contents (OPENCL_KERNEL_FILE_PATH);
-
-    std::string source (
-            std::istreambuf_iterator<char>(kernel_file_contents),
-            (std::istreambuf_iterator<char>())
-    );
-
-    cl::Program::Sources sources { source };
-
-    cl::Program program = cl::Program(context, sources);
-
-    if (program.build() != CL_BUILD_SUCCESS)
-    {
-        std::printf("%s", gpu_device.getInfo<CL_DEVICE_NAME>().c_str());
-        std::printf("%d", program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(gpu_device));
-        std::printf("%s", program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(gpu_device).c_str());
-
-        exit(1);
-    }
-
-    cl::Kernel kernel (program, "update_particle_position_matrix");
-
-    cl::Buffer a (context, CL_MEM_WRITE_ONLY | CL_MEM_HOST_READ_ONLY, sizeof(int));
-    kernel.setArg(0, a);
-
-    SDL_FPoint result[10];
-
-    cl::CommandQueue command_queue (context, gpu_device);
-
-    for (int i = 0; i < 10; i++)
-    {
-        command_queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(1));
-        command_queue.enqueueReadBuffer(a, CL_TRUE, 0, sizeof(int), particle_cartesian_positions.data());
-
-        std::printf("%f\n", particle_cartesian_positions[0].x);
-    }*/
+    gpu_kernel.setArg(WINDOW_SIZE, WINDOW_WIDTH);
 }
 
 void ParticleEngine::update (cl::size_type particle_count, SDL_FPoint cartesian_viewport_origin, int viewport_range)
@@ -78,8 +37,6 @@ void ParticleEngine::update (cl::size_type particle_count, SDL_FPoint cartesian_
 
     gpu_command_queue.enqueueNDRangeKernel(gpu_kernel, cl::NullRange, cl::NDRange { particle_count });
     gpu_command_queue.enqueueReadBuffer(graphical_positions_buffer, CL_TRUE, 0, opencl_buffer_size, graphical_positions.data());
-
-    std::printf("%zu : %.2f, %.2f\n", opencl_buffer_size, cartesian_positions[99].x, cartesian_positions[99].y);
 }
 
 void ParticleEngine::draw () const
@@ -88,11 +45,23 @@ void ParticleEngine::draw () const
 
     SDL_Color colour = PARTICLE_COLOUR;
 
+    SDL_FPoint points [PARTICLE_COUNT];
+
     for (int i = 0; i < PARTICLE_TRAIL_LENGTH; i++)
     {
         alpha_multiplier = 1 - (float)i / PARTICLE_TRAIL_LENGTH;
 
         colour.a = (Uint8)(255 * alpha_multiplier);
+
+        for (int j = i, k = 0; j < PARTICLE_COUNT * PARTICLE_TRAIL_LENGTH; j += PARTICLE_TRAIL_LENGTH)
+        {
+            points[k] = graphical_positions[j];
+
+            k++;
+        }
+
+        SDL_SetRenderDrawColor(renderer, colour.r, colour.g, colour.b, colour.a);
+        SDL_RenderDrawPointsF(renderer, points, PARTICLE_COUNT);
     }
 }
 

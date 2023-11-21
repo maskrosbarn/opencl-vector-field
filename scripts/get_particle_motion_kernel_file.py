@@ -21,14 +21,16 @@ __kernel void update_particle_data
     __global Vector * graphical_position_buffer,
     
     Vector cartesian_viewport_origin,
-    int    viewport_range
+    int    viewport_range,
+    
+    int window_size
 )
 {{
     int id = get_global_id(0);
 
     Vector v = {{ 64, id + 1 }};
 
-    cartesian_position_buffer[id] = v;
+    graphical_position_buffer[id] = v;
 }}
 """
 
