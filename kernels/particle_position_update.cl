@@ -8,14 +8,14 @@ typedef struct Vector
 float x_function (Vector vector) { return vector.y; }
 float y_function (Vector vector) { return -.2f * vector.y - (9.8f / 8) * sin(vector.x); }
 
-__kernel void update_particle_position_matrix
+__kernel void update_particle_data
 (
-    __global Vector * particle_position_matrix_buffer
+    __global Vector * particle_position_buffer
 )
 {
     int id = get_global_id(0);
 
-    Vector v = { 8, 8 };
+    Vector v = { 64, 32 };
 
-    particle_position_matrix_buffer[id] = v;
+    particle_position_buffer[0] = v;
 }

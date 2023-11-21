@@ -56,7 +56,7 @@ void Application::main ()
         plot.update();
         plot.draw();
 
-        particle_engine.update();
+        particle_engine.update(PARTICLE_COUNT, plot.get_viewport_cartesian_origin(), plot.get_viewport_range());
         particle_engine.draw();
 
         SDL_SetRenderDrawColor(

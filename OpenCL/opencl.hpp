@@ -14,7 +14,11 @@ namespace OpenCL
 {
     std::vector<cl::Device> get_gpu_devices ();
 
-    cl::Program get_program (cl::Program::Sources const &, cl::Device const &);
+    cl::Context get_context (cl::Device const &);
+
+    cl::Program get_program (cl::Context);
+
+    cl::Kernel get_kernel (cl::Program const &, char const *);
 };
 
 #endif //VECTORFIELD_OPENCL_HPP

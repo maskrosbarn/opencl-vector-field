@@ -4,6 +4,8 @@
 
 #include <cstdio>
 #include <vector>
+#include <fstream>
+#include <string>
 
 #include "OpenCL/opencl.hpp"
 
@@ -29,35 +31,28 @@ std::vector<cl::Device> OpenCL::get_gpu_devices ()
     }
 
     return platform_devices;
-
-    /**
-     *
-    std::ifstream kernel_file_contents ("/Users/forrest/CLionProjects/VectorField/kernels/runge_kutta.cl");
-
-    std::string source (
-            std::istreambuf_iterator<char>(kernel_file_contents),
-            (std::istreambuf_iterator<char>())
-            );
-
-    std::printf("%s", source.c_str());
-
-    cl::Program::Sources sources { source };
-
-    cl::Context context = cl::Context(gpu_device);
-
-    cl::Program program = cl::Program(context, sources);
-
-    if (program.build() != CL_BUILD_SUCCESS)
-    {
-        std::printf("%s", gpu_device.getInfo<CL_DEVICE_NAME>().c_str());
-        std::printf("%d", program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(gpu_device));
-        std::printf("%s", program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(gpu_device).c_str());
-    }
-     */
 }
 
-cl::Program OpenCL::get_program (cl::Program::Sources const & source, cl::Device const & device)
+cl::Context get_context (cl::Device const & device)
 {
-    cl::Context context (device);
-    cl::Program program (context, source);
+    return cl::Context { device };
+}
+
+cl::Program get_program (cl::Context const & context)
+{
+    std::ifstream kernel_file_data { OPENCL_KERNEL_FILE_PATH };
+
+    std::string kernel_file_contents {
+        std::istreambuf_iterator<char>(kernel_file_data),
+        (std::istreambuf_iterator<char>())
+    };
+
+    cl::Program::Sources sources { kernel_file_contents };
+
+    return { context, sources };
+}
+
+cl::Kernel get_kernel (cl::Program const & program, char const * name)
+{
+    //
 }

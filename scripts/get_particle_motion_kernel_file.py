@@ -9,28 +9,27 @@ y_expression = y_expression.replace('x', 'vector.x').replace('y', 'vector.y')
 file_contents = f"""\
 typedef struct Vector
 {{
-    float x, y;
+float x, y;
 }} Vector;
 
 float x_function (Vector vector) {{ return {x_expression}; }}
 float y_function (Vector vector) {{ return {y_expression}; }}
 
-__kernel void update_particle_position_matrix
+__kernel void update_particle_data
 (
-    __constant int      plot_width,
-    __constant int      plot_height,
-    __global   Vector * cartesian_particle_position_matrix_buffer,
-    __global   Vector * graphical_particle_position_matrix_buffer
+    __global Vector * cartesian_position_buffer,
+    __global Vector * graphical_position_buffer,
+    
+    Vector cartesian_viewport_origin,
+    int    viewport_range
 )
 {{
     int id = get_global_id(0);
-    
-    something;
 
-    Vector v = {{ 89, 8 }};
+    Vector v = {{ 64, id + 1 }};
 
-    particle_position_matrix_buffer[id] = v;
+    cartesian_position_buffer[id] = v;
 }}
 """
-print(file)
+
 stdout.write(file_contents)

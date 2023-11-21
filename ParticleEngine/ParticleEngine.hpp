@@ -22,7 +22,7 @@ class ParticleEngine
 public:
     ParticleEngine(SDL_Renderer *, Plot *);
 
-    void update ();
+    void update (cl::size_type, SDL_FPoint, int);
 
     void draw () const;
 
@@ -31,27 +31,22 @@ private:
 
     Plot * plot;
 
-    cl::Kernel       opencl_particle_update_kernel;
-    cl::CommandQueue opencl_gpu_command_queue;
+    cl::Device       gpu_device;
+    cl::Context      opencl_context;
+    cl::Program      gpu_program;
+    cl::Kernel       gpu_kernel;
+    cl::CommandQueue gpu_command_queue;
 
-    struct
-    {
-        cl::Buffer graphical;
-        cl::Buffer cartesian;
-        cl::Buffer particle_visibility;
-    } opencl_buffer;
+    cl::Buffer cartesian_positions_buffer;
+    cl::Buffer graphical_positions_buffer;
 
-    struct
-    {
-        std::array<SDL_FPoint, PARTICLE_TRAIL_LENGTH * PARTICLE_COUNT> graphical {};
-        std::array<SDL_FPoint, PARTICLE_TRAIL_LENGTH * PARTICLE_COUNT> cartesian {};
-    } particle_positions;
+    std::array<SDL_FPoint, PARTICLE_DATA_POINT_COUNT> cartesian_positions {};
+    std::array<SDL_FPoint, PARTICLE_DATA_POINT_COUNT> graphical_positions {};
 
-    std::array<bool, PARTICLE_COUNT> particle_visibility_flags {};
+    static const cl::size_type opencl_buffer_size = PARTICLE_COUNT * PARTICLE_TRAIL_LENGTH * sizeof(SDL_FPoint);
 
-    static std::vector<cl::Device> get_opencl_gpu_devices ();
-    static cl::Program get_opencl_runge_kutta_program (cl::Device const &);
-    //static cl::CommandQueue
+    static cl::Device get_gpu_device ();
+    static cl::Program create_and_build_gpu_program (cl::Context const &);
 };
 
 

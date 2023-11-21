@@ -11,9 +11,24 @@
 
 ParticleEngine::ParticleEngine (SDL_Renderer * renderer, Plot * plot):
     renderer { renderer },
-    plot     { plot }
+    plot     { plot },
+
+    gpu_device        { get_gpu_device() },
+    opencl_context    { gpu_device },
+    gpu_program       { create_and_build_gpu_program(opencl_context) },
+    gpu_kernel        { gpu_program, "update_particle_data" },
+    gpu_command_queue { opencl_context, gpu_device },
+
+    cartesian_positions_buffer { opencl_context, CL_MEM_WRITE_ONLY | CL_MEM_HOST_READ_ONLY, opencl_buffer_size },
+    graphical_positions_buffer { opencl_context, CL_MEM_WRITE_ONLY | CL_MEM_HOST_READ_ONLY, opencl_buffer_size }
 {
-    /*cl::Device gpu_device = OpenCL::get_gpu_devices()[0];
+    gpu_kernel.setArg(CARTESIAN_POSITION_BUFFER, cartesian_positions_buffer);
+    gpu_kernel.setArg(GRAPHICAL_POSITION_BUFFER, graphical_positions_buffer);
+
+    /*
+    cl::Device gpu_device = OpenCL::get_gpu_devices()[0];
+
+    cl::Context context = cl::Context(gpu_device);
 
     std::ifstream kernel_file_contents (OPENCL_KERNEL_FILE_PATH);
 
@@ -22,11 +37,7 @@ ParticleEngine::ParticleEngine (SDL_Renderer * renderer, Plot * plot):
             (std::istreambuf_iterator<char>())
     );
 
-    std::printf("%s\n", source.c_str());
-
     cl::Program::Sources sources { source };
-
-    cl::Context context = cl::Context(gpu_device);
 
     cl::Program program = cl::Program(context, sources);
 
@@ -39,12 +50,12 @@ ParticleEngine::ParticleEngine (SDL_Renderer * renderer, Plot * plot):
         exit(1);
     }
 
+    cl::Kernel kernel (program, "update_particle_position_matrix");
+
     cl::Buffer a (context, CL_MEM_WRITE_ONLY | CL_MEM_HOST_READ_ONLY, sizeof(int));
+    kernel.setArg(0, a);
 
     SDL_FPoint result[10];
-
-    cl::Kernel kernel (program, "update_particle_position_matrix");
-    kernel.setArg(0, a);
 
     cl::CommandQueue command_queue (context, gpu_device);
 
@@ -57,17 +68,35 @@ ParticleEngine::ParticleEngine (SDL_Renderer * renderer, Plot * plot):
     }*/
 }
 
-void ParticleEngine::update ()
+void ParticleEngine::update (cl::size_type particle_count, SDL_FPoint cartesian_viewport_origin, int viewport_range)
 {
-    //
+    gpu_kernel.setArg(CARTESIAN_VIEWPORT_ORIGIN, cartesian_viewport_origin);
+    gpu_kernel.setArg(VIEWPORT_RANGE, viewport_range);
+
+    gpu_command_queue.enqueueNDRangeKernel(gpu_kernel, cl::NullRange, cl::NDRange { particle_count });
+    gpu_command_queue.enqueueReadBuffer(cartesian_positions_buffer, CL_TRUE, 0, opencl_buffer_size, cartesian_positions.data());
+
+    gpu_command_queue.enqueueNDRangeKernel(gpu_kernel, cl::NullRange, cl::NDRange { particle_count });
+    gpu_command_queue.enqueueReadBuffer(graphical_positions_buffer, CL_TRUE, 0, opencl_buffer_size, graphical_positions.data());
+
+    std::printf("%zu : %.2f, %.2f\n", opencl_buffer_size, cartesian_positions[99].x, cartesian_positions[99].y);
 }
 
 void ParticleEngine::draw () const
 {
-    //
+    float alpha_multiplier;
+
+    SDL_Color colour = PARTICLE_COLOUR;
+
+    for (int i = 0; i < PARTICLE_TRAIL_LENGTH; i++)
+    {
+        alpha_multiplier = 1 - (float)i / PARTICLE_TRAIL_LENGTH;
+
+        colour.a = (Uint8)(255 * alpha_multiplier);
+    }
 }
 
-std::vector<cl::Device> ParticleEngine::get_opencl_gpu_devices ()
+cl::Device ParticleEngine::get_gpu_device ()
 {
     std::vector<cl::Platform> platforms;
     cl::Platform::get(&platforms);
@@ -88,38 +117,34 @@ std::vector<cl::Device> ParticleEngine::get_opencl_gpu_devices ()
         exit(1);
     }
 
-    return platform_devices;
+    return platform_devices[0];
 }
 
-cl::Program ParticleEngine::get_opencl_runge_kutta_program (cl::Device const & gpu_device)
+cl::Program ParticleEngine::create_and_build_gpu_program (cl::Context const & opencl_context)
 {
-    std::ifstream kernel_file (OPENCL_KERNEL_FILE_PATH);
+    cl::Device gpu_device = get_gpu_device();
 
-    std::string kernel_file_contents (
-            std::istreambuf_iterator<char>(kernel_file),
+    std::ifstream kernel_file_data { OPENCL_KERNEL_FILE_PATH };
+
+    std::string kernel_file_contents {
+            std::istreambuf_iterator<char>(kernel_file_data),
             (std::istreambuf_iterator<char>())
-            );
+    };
 
-    cl::Program::Sources source { kernel_file_contents };
+    cl::Program::Sources program_sources { kernel_file_contents };
 
-    cl::Context context { gpu_device };
-
-    cl::Program program { context, source };
+    cl::Program program { opencl_context, program_sources };
     cl_int build_status = program.build();
 
-    if (build_status == CL_BUILD_SUCCESS)
-        std::printf(
-                "Built OpenCL kernel at: %s\n\n%s\n\nfor GPU: %s\n\n",
-                OPENCL_KERNEL_FILE_PATH,
-                kernel_file_contents.c_str(),
-                gpu_device.getInfo<CL_DEVICE_NAME>().c_str()
-                );
+    std::printf("[OpenCL] program build for GPU: %s;\n", gpu_device.getInfo<CL_DEVICE_NAME>().c_str());
 
+    if (build_status != CL_BUILD_SUCCESS)
+    {
+        std::printf("Failed\n%s", program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(gpu_device).c_str());
+        exit(1);
+    }
     else
-        std::printf(
-                "OpenCL build failed:\n\n%s\n\n",
-                program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(gpu_device).c_str()
-                );
+        std::printf("Success\n");
 
     return program;
 }

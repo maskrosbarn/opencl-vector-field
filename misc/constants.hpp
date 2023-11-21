@@ -19,21 +19,17 @@ const char * const FONT_FILE_PATH = "/System/Library/Fonts/Monaco.ttf";
 constexpr float FONT_SIZE = 14.f;
 
 const SDL_Color
-    BACKGROUND_COLOUR = { 0, 0, 0, 255 },
-    FOREGROUND_COLOUR = { 255, 255, 255, 255 };
+    BACKGROUND_COLOUR { 0, 0, 0, 255 },
+    FOREGROUND_COLOUR { 255, 255, 255, 255 };
 
 const int
     SAMPLE_POINT_ROW_COUNT    = 40,
     SAMPLE_POINT_COLUMN_COUNT = 40;
 
 constexpr float
-    SAMPLE_POINT_ROW_SPACING    = WINDOW_HEIGHT / SAMPLE_POINT_ROW_COUNT,
-    SAMPLE_POINT_COLUMN_SPACING = WINDOW_WIDTH / SAMPLE_POINT_COLUMN_COUNT;
-
-constexpr float
     VECTOR_ARROW_BODY_LENGTH     = 8.f,
     VECTOR_ARROW_HEAD_LENGTH     = 6.f,
-    VECTOR_ARROW_HEAD_HALF_WIDTH = 3.F;
+    VECTOR_ARROW_HEAD_HALF_WIDTH = 3.f;
 
 constexpr float AXES_LABEL_MARGIN = 5.f;
 
@@ -43,9 +39,19 @@ const int
 
 const int
     PARTICLE_COUNT = 100,
-    PARTICLE_TRAIL_LENGTH = 10;
+    PARTICLE_TRAIL_LENGTH = 10,
+    PARTICLE_DATA_POINT_COUNT = PARTICLE_COUNT * PARTICLE_TRAIL_LENGTH;
 
-const char * const OPENCL_KERNEL_FILE_PATH = "/Users/forrest/CLionProjects/VectorField/kernels/particle_position_update.cl";
+const SDL_Color PARTICLE_COLOUR { 164, 164, 164, 1 };
+
+enum OpenCLKernelArguments
+{
+    CARTESIAN_POSITION_BUFFER,
+    GRAPHICAL_POSITION_BUFFER,
+
+    CARTESIAN_VIEWPORT_ORIGIN,
+    VIEWPORT_RANGE
+};
 
 
 #endif //VECTORFIELD_CONSTANTS_HPP
