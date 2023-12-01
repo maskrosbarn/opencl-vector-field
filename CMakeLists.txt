@@ -3,7 +3,7 @@ project(VectorField)
 
 set(CMAKE_CXX_STANDARD 23)
 
-add_definitions(-DOPENCL_KERNEL_FILE_PATH="${CMAKE_CURRENT_BINARY_DIR}/kernels/particle_motion.cl")
+add_definitions(-DOPENCL_KERNEL_FILE_PATH="${CMAKE_CURRENT_BINARY_DIR}/kernels/particle_engine.cl")
 
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Functions)
 
@@ -33,8 +33,8 @@ add_custom_target(MainConfiguration
 )
 
 add_custom_target(KernelConfiguration
-        BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/kernels/particle_motion.cl
-        COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/get_particle_motion_kernel_file.py ${CMAKE_CURRENT_SOURCE_DIR}/Functions > ${CMAKE_CURRENT_BINARY_DIR}/kernels/particle_motion.cl
+        BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/kernels/particle_engine.cl
+        COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/get_particle_engine_kernel_file.py ${CMAKE_CURRENT_SOURCE_DIR}/Functions ${CMAKE_CURRENT_SOURCE_DIR}/kernels/particle_engine.cl > ${CMAKE_CURRENT_BINARY_DIR}/kernels/particle_engine.cl
 )
 
 add_dependencies(VectorField MainConfiguration KernelConfiguration)

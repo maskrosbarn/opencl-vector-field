@@ -2,7 +2,7 @@
 // Created by Russell Forrest on 20/10/2023.
 //
 
-#include <cstdio>
+#include <cmath>
 
 #include "Plot.hpp"
 #include "misc/BivariateFunction.hpp"
@@ -71,7 +71,7 @@ int Plot::get_viewport_range () const
 
 void Plot::set_viewport_range (int range)
 {
-    viewport.range = std::clamp(range, VIEWPORT_MINIMUM_RANGE, VIEWPORT_MAXIMUM_RANGE);
+    viewport.range = std::clamp(range, constants::axes::minimum_range, constants::axes::maximum_range);
 }
 
 SDL_FPoint Plot::graphical_to_cartesian (SDL_FPoint point) const
@@ -92,9 +92,9 @@ Plot::Plot (SDL_Renderer * renderer, BivariateFunction x_function, BivariateFunc
     FC_LoadFont(
             font,
             renderer,
-            FONT_FILE_PATH,
-            FONT_SIZE,
-            FOREGROUND_COLOUR,
+            constants::font::file_path,
+            constants::font::size,
+            constants::colour::foreground,
             TTF_STYLE_NORMAL
             );
 
@@ -139,8 +139,8 @@ void Plot::update_axes ()
     axes_position = cartesian_to_graphical({ 0, 0 });
 
     axes_position = {
-            std::clamp(axes_position.x, 0.f, WINDOW_WIDTH),
-            std::clamp(axes_position.y, 0.f, WINDOW_HEIGHT)
+            std::clamp(axes_position.x, 0.f, constants::window_size),
+            std::clamp(axes_position.y, 0.f, constants::window_size)
     };
 
     axes_labels.x.positive.label_value = viewport.cartesian_origin.x + (float)viewport.range * .5f;
@@ -160,15 +160,15 @@ void Plot::update_axes ()
 
     float x_label_y_position;
 
-    if (axes_position.y > WINDOW_HEIGHT - font_line_height - AXES_LABEL_MARGIN)
+    if (axes_position.y > constants::window_size - font_line_height - constants::axes::label_margin)
     {
-        x_label_y_position = axes_position.y - font_line_height - AXES_LABEL_MARGIN;
+        x_label_y_position = axes_position.y - font_line_height - constants::axes::label_margin;
     }
     else
-        x_label_y_position = axes_position.y + AXES_LABEL_MARGIN;
+        x_label_y_position = axes_position.y + constants::axes::label_margin;
 
-    axes_labels.x.positive.position = { WINDOW_WIDTH - positive_x_text_width - AXES_LABEL_MARGIN, x_label_y_position };
-    axes_labels.x.negative.position = { AXES_LABEL_MARGIN, x_label_y_position };
+    axes_labels.x.positive.position = { constants::window_size - positive_x_text_width - constants::axes::label_margin, x_label_y_position };
+    axes_labels.x.negative.position = { constants::axes::label_margin, x_label_y_position };
 
     //
     //
@@ -178,32 +178,32 @@ void Plot::update_axes ()
 
     float greatest_label_width = fmax(positive_y_text_width, negative_y_text_width);
 
-    if (axes_position.x > WINDOW_WIDTH - greatest_label_width)
-        y_label_x_position = axes_position.x - greatest_label_width + AXES_LABEL_MARGIN;
+    if (axes_position.x > constants::window_size - greatest_label_width)
+        y_label_x_position = axes_position.x - greatest_label_width + constants::axes::label_margin;
 
     else
-        y_label_x_position = axes_position.x + AXES_LABEL_MARGIN;
+        y_label_x_position = axes_position.x + constants::axes::label_margin;
 
-    axes_labels.y.positive.position = { y_label_x_position, AXES_LABEL_MARGIN };
-    axes_labels.y.negative.position = { y_label_x_position, WINDOW_HEIGHT - AXES_LABEL_MARGIN - font_line_height };
+    axes_labels.y.positive.position = { y_label_x_position, constants::axes::label_margin };
+    axes_labels.y.negative.position = { y_label_x_position, constants::window_size - constants::axes::label_margin - font_line_height };
 
     // fixme: how the hell can the axis label pinning be seamless?
 
-    if (axes_position.x < negative_y_text_width + 2 * AXES_LABEL_MARGIN && axes_position.y < font_line_height + 2 * AXES_LABEL_MARGIN)
+    if (axes_position.x < negative_y_text_width + 2 * constants::axes::label_margin && axes_position.y < font_line_height + 2 * constants::axes::label_margin)
     {
-        axes_labels.x.negative.position.y = font_line_height + 2 * AXES_LABEL_MARGIN;
-        axes_labels.y.positive.position.x = negative_x_text_width + 2 * AXES_LABEL_MARGIN;
+        axes_labels.x.negative.position.y = font_line_height + 2 * constants::axes::label_margin;
+        axes_labels.y.positive.position.x = negative_x_text_width + 2 * constants::axes::label_margin;
     }
-    else if (axes_position.x > WINDOW_WIDTH - positive_x_text_width - 2 * AXES_LABEL_MARGIN && axes_position.y > WINDOW_HEIGHT - font_line_height - 2 * AXES_LABEL_MARGIN)
+    else if (axes_position.x > constants::window_size - positive_x_text_width - 2 * constants::axes::label_margin && axes_position.y > constants::window_size - font_line_height - 2 * constants::axes::label_margin)
     {
-        axes_labels.x.positive.position.x = WINDOW_WIDTH - AXES_LABEL_MARGIN - positive_y_text_width;
-        axes_labels.y.negative.position.y = WINDOW_HEIGHT - font_line_height - 2 * AXES_LABEL_MARGIN;
+        axes_labels.x.positive.position.x = constants::window_size - constants::axes::label_margin - positive_y_text_width;
+        axes_labels.y.negative.position.y = constants::window_size - font_line_height - 2 * constants::axes::label_margin;
     }
-    else if (axes_position.x == 0 && axes_position.y == WINDOW_HEIGHT)
+    else if (axes_position.x == 0 && axes_position.y == constants::window_size)
     {
         //
     }
-    else if (axes_position.x == WINDOW_WIDTH && axes_position.y == 0)
+    else if (axes_position.x == constants::window_size && axes_position.y == 0)
     {
         //
     }
@@ -222,14 +222,14 @@ void Plot::update_vector_property_matrix ()
 
     maximum_sample_point_magnitude = minimum_sample_point_magnitude = 0;
 
-    for (size_t row = 0; row < SAMPLE_POINT_ROW_COUNT; row++)
-        for (size_t column = 0; column < SAMPLE_POINT_COLUMN_COUNT; column++)
+    for (size_t row = 0; row < constants::vector_arrow::row_sample_point_count; row++)
+        for (size_t column = 0; column < constants::vector_arrow::row_sample_point_count; column++)
         {
             properties = &vector_properties_matrix[row][column];
 
             properties->tail = {
-                    (2 * (float) column + 1) * WINDOW_WIDTH / (2 * SAMPLE_POINT_COLUMN_COUNT),
-                    (2 * (float) row + 1) * WINDOW_HEIGHT / (2 * SAMPLE_POINT_ROW_COUNT)
+                    std::fmaf(2, (float)column, 1) * constants::window_size / (2 * constants::vector_arrow::row_sample_point_count),
+                    std::fmaf(2, (float)row, 1) * constants::window_size / (2 * constants::vector_arrow::row_sample_point_count)
             };
 
             cartesian_tail_position = graphical_to_cartesian(properties->tail);
@@ -252,7 +252,7 @@ void Plot::update_vector_property_matrix ()
 
                 properties->head = get_fixed_graphical_length_from_cartesian(
                         cartesian_tail_position,
-                        VECTOR_ARROW_BODY_LENGTH,
+                        constants::vector_arrow::body_length,
                         vector_angle
                 );
 
@@ -260,19 +260,19 @@ void Plot::update_vector_property_matrix ()
 
                 properties->head_left = get_fixed_graphical_length_from_cartesian(
                         cartesian_head_position,
-                        VECTOR_ARROW_HEAD_HALF_WIDTH,
-                        vector_angle - (float) M_PI_4
+                        constants::vector_arrow::head_half_width,
+                        vector_angle - (float)M_PI_4
                 );
 
                 properties->head_right = get_fixed_graphical_length_from_cartesian(
                         cartesian_head_position,
-                        VECTOR_ARROW_HEAD_HALF_WIDTH,
-                        vector_angle + (float) M_PI_4
+                        constants::vector_arrow::head_half_width,
+                        vector_angle + (float)M_PI_4
                 );
 
                 properties->tip = get_fixed_graphical_length_from_cartesian(
                         cartesian_head_position,
-                        VECTOR_ARROW_HEAD_LENGTH,
+                        constants::vector_arrow::head_length,
                         vector_angle
                 );
             }
@@ -281,7 +281,7 @@ void Plot::update_vector_property_matrix ()
 
 void Plot::draw () const
 {
-    float h = mouse.position.graphical.x / WINDOW_WIDTH;
+    float h = mouse.position.graphical.x / constants::window_size;
 
     SDL_Color c = get_heat_map_colour(h);
 
@@ -297,9 +297,9 @@ void Plot::draw () const
 
 void Plot::draw_vector_field () const
 {
-    for (size_t row = 0; row < SAMPLE_POINT_ROW_COUNT; row++)
+    for (size_t row = 0; row < constants::vector_arrow::row_sample_point_count; row++)
     {
-        for (size_t column = 0; column < SAMPLE_POINT_COLUMN_COUNT; column++)
+        for (size_t column = 0; column < constants::vector_arrow::row_sample_point_count; column++)
             draw_vector(row, column);
     }
 }
@@ -339,14 +339,14 @@ void Plot::draw_axes () const
 {
     SDL_SetRenderDrawColor(
             renderer,
-            FOREGROUND_COLOUR.r,
-            FOREGROUND_COLOUR.g,
-            FOREGROUND_COLOUR.b,
-            FOREGROUND_COLOUR.a
+            constants::colour::foreground.r,
+            constants::colour::foreground.g,
+            constants::colour::foreground.b,
+            constants::colour::foreground.a
             );
 
-    SDL_RenderDrawLineF(renderer, 0, axes_position.y, WINDOW_WIDTH, axes_position.y);
-    SDL_RenderDrawLineF(renderer, axes_position.x, 0, axes_position.x, WINDOW_HEIGHT);
+    SDL_RenderDrawLineF(renderer, 0, axes_position.y, constants::window_size, axes_position.y);
+    SDL_RenderDrawLineF(renderer, axes_position.x, 0, axes_position.x, constants::window_size);
 
     FC_Draw(
             font,

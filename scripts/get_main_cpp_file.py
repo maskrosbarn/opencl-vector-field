@@ -7,8 +7,6 @@ x_expression = x_expression.replace('x', 'vector.x').replace('y', 'vector.y')
 y_expression = y_expression.replace('x', 'vector.x').replace('y', 'vector.y')
 
 file_contents = f"""\
-// some text
-
 #include "Application/Application.hpp"
 #include "misc/BivariateFunction.hpp"
 

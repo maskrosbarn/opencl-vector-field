@@ -63,7 +63,7 @@ private:
         SDL_FPoint tail, head, head_left, head_right, tip;
     };
 
-    std::array<std::array<VectorProperties, SAMPLE_POINT_COLUMN_COUNT>, SAMPLE_POINT_ROW_COUNT> vector_properties_matrix {};
+    std::array<std::array<VectorProperties, constants::vector_arrow::row_sample_point_count>, constants::vector_arrow::row_sample_point_count> vector_properties_matrix {};
 
     bool needs_update = true;
 

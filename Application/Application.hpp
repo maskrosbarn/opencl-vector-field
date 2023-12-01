@@ -15,6 +15,8 @@
 class Application
 {
 public:
+    static const char * const name;
+
     Application (BivariateFunction, BivariateFunction);
 
 private:

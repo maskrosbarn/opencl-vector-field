@@ -3,7 +3,6 @@
 //
 
 #import <cmath>
-#import <format>
 
 #include "misc/vector_computation.hpp"
 #include "misc/constants.hpp"
@@ -37,16 +36,16 @@ SDL_FPoint operator * (float scalar, SDL_FPoint vector)
 
 static float graphical_to_cartesian_x (float graphical_position, float cartesian_viewport_position, int viewport_range)
 {
-    float positional_fraction = (float)graphical_position / WINDOW_WIDTH - .5f;
+    float positional_fraction = (float)graphical_position / constants::window_size - .5f;
 
-    return positional_fraction * (float)viewport_range + cartesian_viewport_position;
+    return std::fmaf(positional_fraction, (float)viewport_range, cartesian_viewport_position);
 }
 
 static float graphical_to_cartesian_y (float graphical_position, float cartesian_viewport_position, int viewport_range)
 {
-    float positional_fraction = .5f - (float)graphical_position / WINDOW_HEIGHT;
+    float positional_fraction = .5f - (float)graphical_position / constants::window_size;
 
-    return positional_fraction * (float)viewport_range + cartesian_viewport_position;
+    return std::fmaf(positional_fraction, (float)viewport_range, cartesian_viewport_position);
 }
 
 SDL_FPoint graphical_to_cartesian_space (SDL_FPoint vector, SDL_FPoint cartesian_viewport_position, int viewport_range)
@@ -61,14 +60,14 @@ static float cartesian_to_graphical_x (float graphical_position, float cartesian
 {
     float a = (graphical_position - cartesian_viewport_position) / (float)viewport_range;
 
-    return WINDOW_WIDTH * (a + .5f);
+    return constants::window_size * (a + .5f);
 }
 
 static float cartesian_to_graphical_y (float graphical_position, float cartesian_viewport_position, int viewport_range)
 {
     float a = (graphical_position - cartesian_viewport_position) / (float)viewport_range;
 
-    return WINDOW_HEIGHT * (.5f - a);
+    return constants::window_size * (.5f - a);
 }
 
 SDL_FPoint cartesian_to_graphical_space (SDL_FPoint vector, SDL_FPoint cartesian_viewport_position, int viewport_range)

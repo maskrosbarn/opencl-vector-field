@@ -3,6 +3,7 @@
 //
 
 #include <cstdio>
+#include <cstdlib>
 
 #include <SDL.h>
 
@@ -22,11 +23,11 @@ static SDL_Window * get_window ()
     SDL_GetDisplayBounds(0, &display_bounds);
 
     return SDL_CreateWindow(
-            "Vector Field",
+            Application::name,
             display_bounds.x,
             display_bounds.y,
-            WINDOW_WIDTH,
-            WINDOW_HEIGHT,
+            constants::window_size,
+            constants::window_size,
             0
             );
 }
@@ -36,12 +37,18 @@ static SDL_Renderer * get_renderer (SDL_Window * window)
     return SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 }
 
+const char * const Application::name = "Vector Field";
+
 Application::Application (BivariateFunction x_function, BivariateFunction y_function):
+
     window   { get_window() },
     renderer { get_renderer(window) },
+
     plot (renderer, x_function, y_function),
     particle_engine(renderer, &plot)
 {
+    srand(time(nullptr));
+
     main();
 }
 
@@ -56,15 +63,15 @@ void Application::main ()
         plot.update();
         plot.draw();
 
-        particle_engine.update(PARTICLE_COUNT, plot.get_viewport_cartesian_origin(), plot.get_viewport_range());
+        particle_engine.update(constants::particle::count, plot.get_viewport_cartesian_origin(), plot.get_viewport_range());
         particle_engine.draw();
 
         SDL_SetRenderDrawColor(
                 renderer,
-                BACKGROUND_COLOUR.r,
-                BACKGROUND_COLOUR.g,
-                BACKGROUND_COLOUR.b,
-                BACKGROUND_COLOUR.a
+                constants::colour::background.r,
+                constants::colour::background.g,
+                constants::colour::background.b,
+                constants::colour::background.a
                 );
 
         SDL_RenderPresent(renderer);

@@ -19,41 +19,54 @@ ParticleEngine::ParticleEngine (SDL_Renderer * renderer, Plot * plot):
     gpu_kernel        { gpu_program, "update_particle_data" },
     gpu_command_queue { opencl_context, gpu_device },
 
-    cartesian_positions_buffer { opencl_context, CL_MEM_WRITE_ONLY | CL_MEM_HOST_READ_ONLY, opencl_buffer_size },
-    graphical_positions_buffer { opencl_context, CL_MEM_WRITE_ONLY | CL_MEM_HOST_READ_ONLY, opencl_buffer_size }
+    random_number_buffer       { opencl_context, CL_MEM_ALLOC_HOST_PTR | CL_MEM_HOST_READ_ONLY, constants::particle::count * sizeof(float) },
+    random_number_flags_buffer { opencl_context, CL_MEM_ALLOC_HOST_PTR | CL_MEM_HOST_READ_ONLY, constants::particle::count * sizeof(bool) },
+    cartesian_positions_buffer { opencl_context, CL_MEM_ALLOC_HOST_PTR | CL_MEM_HOST_READ_ONLY, opencl_buffer_size },
+    graphical_positions_buffer { opencl_context, CL_MEM_ALLOC_HOST_PTR | CL_MEM_HOST_READ_ONLY, opencl_buffer_size }
 {
-    gpu_kernel.setArg(CARTESIAN_POSITION_BUFFER, cartesian_positions_buffer);
-    gpu_kernel.setArg(GRAPHICAL_POSITION_BUFFER, graphical_positions_buffer);
-    gpu_kernel.setArg(WINDOW_SIZE, WINDOW_WIDTH);
+    gpu_kernel.setArg(OpenCLKernelArguments::random_number_buffer, random_number_buffer);
+    gpu_kernel.setArg(OpenCLKernelArguments::random_number_recycle_flags_buffer, random_number_flags_buffer);
+    gpu_kernel.setArg(OpenCLKernelArguments::particle_cartesian_position_buffer, cartesian_positions_buffer);
+    gpu_kernel.setArg(OpenCLKernelArguments::particle_graphical_position_buffer, graphical_positions_buffer);
+    gpu_kernel.setArg(OpenCLKernelArguments::particle_trail_length, constants::particle::trail_length);
+    gpu_kernel.setArg(OpenCLKernelArguments::window_size, constants::window_size);
+
+    for (int i = 0; i < constants::particle::count; i++)
+    {
+        random_number_values[i] = 0;
+        random_number_flags[i] = false;
+    }
 }
 
-void ParticleEngine::update (cl::size_type particle_count, SDL_FPoint cartesian_viewport_origin, int viewport_range)
+void ParticleEngine::update (size_t particle_count, SDL_FPoint cartesian_viewport_origin, int viewport_range)
 {
-    gpu_kernel.setArg(CARTESIAN_VIEWPORT_ORIGIN, cartesian_viewport_origin);
-    gpu_kernel.setArg(VIEWPORT_RANGE, viewport_range);
+    gpu_kernel.setArg(OpenCLKernelArguments::viewport_origin, cartesian_viewport_origin);
+    gpu_kernel.setArg(OpenCLKernelArguments::viewport_range, viewport_range);
 
     gpu_command_queue.enqueueNDRangeKernel(gpu_kernel, cl::NullRange, cl::NDRange { particle_count });
+
     gpu_command_queue.enqueueReadBuffer(cartesian_positions_buffer, CL_TRUE, 0, opencl_buffer_size, cartesian_positions.data());
-
-    gpu_command_queue.enqueueNDRangeKernel(gpu_kernel, cl::NullRange, cl::NDRange { particle_count });
     gpu_command_queue.enqueueReadBuffer(graphical_positions_buffer, CL_TRUE, 0, opencl_buffer_size, graphical_positions.data());
+    gpu_command_queue.enqueueReadBuffer(random_number_flags_buffer, CL_TRUE, 0, constants::particle::count * sizeof(bool), random_number_flags.data());
+
+    std::printf("%d\n", random_number_flags[0]);
 }
 
 void ParticleEngine::draw () const
 {
     float alpha_multiplier;
 
-    SDL_Color colour = PARTICLE_COLOUR;
+    SDL_Color colour = constants::particle::colour;
 
-    SDL_FPoint points [PARTICLE_COUNT];
+    SDL_FPoint points [constants::particle::count];
 
-    for (int i = 0; i < PARTICLE_TRAIL_LENGTH; i++)
+    for (int i = 0; i < constants::particle::trail_length; i++)
     {
-        alpha_multiplier = 1 - (float)i / PARTICLE_TRAIL_LENGTH;
+        alpha_multiplier = 1 - (float)i / constants::particle::trail_length;
 
         colour.a = (Uint8)(255 * alpha_multiplier);
 
-        for (int j = i, k = 0; j < PARTICLE_COUNT * PARTICLE_TRAIL_LENGTH; j += PARTICLE_TRAIL_LENGTH)
+        for (int j = i, k = 0; j < constants::particle::count * constants::particle::trail_length; j += constants::particle::trail_length)
         {
             points[k] = graphical_positions[j];
 
@@ -61,8 +74,17 @@ void ParticleEngine::draw () const
         }
 
         SDL_SetRenderDrawColor(renderer, colour.r, colour.g, colour.b, colour.a);
-        SDL_RenderDrawPointsF(renderer, points, PARTICLE_COUNT);
+        SDL_RenderDrawPointsF(renderer, points, constants::particle::count);
     }
+}
+
+float ParticleEngine::get_opencl_work_item_seed_value (size_t work_item_id)
+{
+    float seed_value = random_number_values[work_item_id];
+
+    random_number_values[work_item_id] = (float)rand() / (float)RAND_MAX;
+
+    return seed_value;
 }
 
 cl::Device ParticleEngine::get_gpu_device ()
