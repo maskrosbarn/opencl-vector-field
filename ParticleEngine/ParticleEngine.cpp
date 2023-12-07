@@ -9,6 +9,11 @@
 #include "ParticleEngine.hpp"
 #include "OpenCL/opencl.hpp"
 
+static float get_random_value ()
+{
+    return (float)rand() / (float)RAND_MAX;
+}
+
 ParticleEngine::ParticleEngine (SDL_Renderer * renderer, Plot * plot):
     renderer { renderer },
     plot     { plot },
@@ -19,23 +24,43 @@ ParticleEngine::ParticleEngine (SDL_Renderer * renderer, Plot * plot):
     gpu_kernel        { gpu_program, "update_particle_data" },
     gpu_command_queue { opencl_context, gpu_device },
 
-    random_number_buffer       { opencl_context, CL_MEM_ALLOC_HOST_PTR | CL_MEM_HOST_READ_ONLY, constants::particle::count * sizeof(float) },
-    random_number_flags_buffer { opencl_context, CL_MEM_ALLOC_HOST_PTR | CL_MEM_HOST_READ_ONLY, constants::particle::count * sizeof(bool) },
-    cartesian_positions_buffer { opencl_context, CL_MEM_ALLOC_HOST_PTR | CL_MEM_HOST_READ_ONLY, opencl_buffer_size },
-    graphical_positions_buffer { opencl_context, CL_MEM_ALLOC_HOST_PTR | CL_MEM_HOST_READ_ONLY, opencl_buffer_size }
+    random_number_buffer       { opencl_context, CL_MEM_ALLOC_HOST_PTR, constants::particle::count * sizeof(float) },
+    random_number_flag_buffer  { opencl_context, CL_MEM_ALLOC_HOST_PTR, constants::particle::count * sizeof(bool) },
+    cartesian_positions_buffer { opencl_context, CL_MEM_ALLOC_HOST_PTR, opencl_buffer_size },
+    graphical_positions_buffer { opencl_context, CL_MEM_ALLOC_HOST_PTR, opencl_buffer_size }
 {
-    gpu_kernel.setArg(OpenCLKernelArguments::random_number_buffer, random_number_buffer);
-    gpu_kernel.setArg(OpenCLKernelArguments::random_number_recycle_flags_buffer, random_number_flags_buffer);
+    gpu_kernel.setArg(OpenCLKernelArguments::random_number_buffer,               random_number_buffer);
+    gpu_kernel.setArg(OpenCLKernelArguments::random_number_flag_buffer,          random_number_flag_buffer);
     gpu_kernel.setArg(OpenCLKernelArguments::particle_cartesian_position_buffer, cartesian_positions_buffer);
     gpu_kernel.setArg(OpenCLKernelArguments::particle_graphical_position_buffer, graphical_positions_buffer);
-    gpu_kernel.setArg(OpenCLKernelArguments::particle_trail_length, constants::particle::trail_length);
-    gpu_kernel.setArg(OpenCLKernelArguments::window_size, constants::window_size);
+    gpu_kernel.setArg(OpenCLKernelArguments::particle_count,                     constants::particle::count);
+    gpu_kernel.setArg(OpenCLKernelArguments::particle_trail_length,              constants::particle::trail_length);
+    gpu_kernel.setArg(OpenCLKernelArguments::window_size,                        constants::window_size);
+
+    random_numbers = (float *)gpu_command_queue.enqueueMapBuffer(
+            random_number_buffer,
+            CL_TRUE,
+            CL_MAP_WRITE,
+            0,
+            constants::particle::count * sizeof(float)
+            );
+
+    random_number_flags = (bool *)gpu_command_queue.enqueueMapBuffer(
+            random_number_flag_buffer,
+            CL_TRUE,
+            CL_MAP_WRITE,
+            0,
+            constants::particle::count * sizeof(bool)
+            );
 
     for (int i = 0; i < constants::particle::count; i++)
     {
-        random_number_values[i] = 0;
+        random_numbers[i] = get_random_value();
         random_number_flags[i] = false;
     }
+
+    gpu_command_queue.enqueueUnmapMemObject(random_number_buffer, random_numbers);
+    gpu_command_queue.enqueueUnmapMemObject(random_number_flag_buffer, random_number_flags);
 }
 
 void ParticleEngine::update (size_t particle_count, SDL_FPoint cartesian_viewport_origin, int viewport_range)
@@ -45,15 +70,44 @@ void ParticleEngine::update (size_t particle_count, SDL_FPoint cartesian_viewpor
 
     gpu_command_queue.enqueueNDRangeKernel(gpu_kernel, cl::NullRange, cl::NDRange { particle_count });
 
-    gpu_command_queue.enqueueReadBuffer(cartesian_positions_buffer, CL_TRUE, 0, opencl_buffer_size, cartesian_positions.data());
-    gpu_command_queue.enqueueReadBuffer(graphical_positions_buffer, CL_TRUE, 0, opencl_buffer_size, graphical_positions.data());
-    gpu_command_queue.enqueueReadBuffer(random_number_flags_buffer, CL_TRUE, 0, constants::particle::count * sizeof(bool), random_number_flags.data());
+    random_numbers = (float *)gpu_command_queue.enqueueMapBuffer(
+            random_number_buffer,
+            CL_TRUE,
+            CL_MAP_WRITE,
+            0,
+            constants::particle::count * sizeof(float)
+            );
 
-    std::printf("%d\n", random_number_flags[0]);
+    random_number_flags = (bool *)gpu_command_queue.enqueueMapBuffer(
+            random_number_flag_buffer,
+            CL_TRUE,
+            CL_MAP_READ | CL_MAP_WRITE,
+            0,
+            constants::particle::count * sizeof(bool)
+            );
+
+    for (size_t i = 0; i < constants::particle::count; i++)
+    {
+        if (random_number_flags[i])
+        {
+            random_numbers[i] = get_random_value();
+            random_number_flags[i] = false;
+        }
+    }
+
+    gpu_command_queue.enqueueUnmapMemObject(random_number_buffer, random_numbers);
+    gpu_command_queue.enqueueUnmapMemObject(random_number_flag_buffer, random_number_flags);
 }
 
-void ParticleEngine::draw () const
+void ParticleEngine::draw ()
 {
+    graphical_positions = (SDL_FPoint *)gpu_command_queue.enqueueMapBuffer(
+            graphical_positions_buffer,
+            CL_TRUE,
+            CL_MAP_READ,
+            0, opencl_buffer_size
+            );
+
     float alpha_multiplier;
 
     SDL_Color colour = constants::particle::colour;
@@ -76,15 +130,8 @@ void ParticleEngine::draw () const
         SDL_SetRenderDrawColor(renderer, colour.r, colour.g, colour.b, colour.a);
         SDL_RenderDrawPointsF(renderer, points, constants::particle::count);
     }
-}
 
-float ParticleEngine::get_opencl_work_item_seed_value (size_t work_item_id)
-{
-    float seed_value = random_number_values[work_item_id];
-
-    random_number_values[work_item_id] = (float)rand() / (float)RAND_MAX;
-
-    return seed_value;
+    gpu_command_queue.enqueueUnmapMemObject(graphical_positions_buffer, graphical_positions);
 }
 
 cl::Device ParticleEngine::get_gpu_device ()
