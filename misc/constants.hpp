@@ -12,7 +12,7 @@
 
 namespace constants
 {
-    constexpr float window_size = 950;
+    const float window_size = 950.f;
 
     namespace font
     {

@@ -20,7 +20,7 @@
 class ParticleEngine
 {
 public:
-    ParticleEngine(SDL_Renderer *, Plot *);
+    ParticleEngine (SDL_Renderer *, Plot *);
 
     void update (size_t, SDL_FPoint, int);
 
@@ -28,6 +28,8 @@ public:
 
 private:
     static const size_t opencl_buffer_size = constants::particle::count * constants::particle::trail_length * sizeof(SDL_FPoint);
+
+    static constexpr float particle_rect_offset = 2.f;
 
     SDL_Renderer * renderer;
 
@@ -43,8 +45,8 @@ private:
     {
         enum _
         {
-            random_number_buffer,
-            random_number_flag_buffer,
+            random_number_seeds_buffer,
+            random_number_seed_flags_buffer,
 
             particle_cartesian_position_buffer,
             particle_graphical_position_buffer,
@@ -58,27 +60,22 @@ private:
         };
     };
 
-    cl::Buffer random_number_buffer;
-    cl::Buffer random_number_flag_buffer;
+    cl::Buffer random_number_seeds_buffer;
+    cl::Buffer random_number_seed_flags_buffer;
     cl::Buffer cartesian_positions_buffer;
     cl::Buffer graphical_positions_buffer;
+    cl::Buffer particle_reset_flags_buffer;
 
-    float * random_numbers;
-    bool * random_number_flags;
+    long * random_number_seeds;
+    bool * random_number_seed_flags;
 
     SDL_FPoint * cartesian_positions = nullptr;
     SDL_FPoint * graphical_positions = nullptr;
 
-    //std::array<float, constants::particle::count> random_number_values {};
-    //std::array<bool, constants::particle::count>  random_number_flags  {};
-
-    //std::array<SDL_FPoint, constants::particle::data_point_count> cartesian_positions {};
-    //std::array<SDL_FPoint, constants::particle::data_point_count> graphical_positions {};
+    bool * particle_reset_flags = nullptr;
 
     static cl::Device get_gpu_device ();
     static cl::Program create_and_build_gpu_program (cl::Context const &);
-
-    void draw_particle_trail_set ();
 };
 
 

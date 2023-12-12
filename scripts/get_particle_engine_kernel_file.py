@@ -9,13 +9,7 @@ y_expression = y_expression.replace('x', 'vector.x').replace('y', 'vector.y')
 with open(argv[2], 'r') as kernel_file:
     kernel_file_contents = kernel_file.read()
 
-    # kernel_file_contents = kernel_file_contents.replace('{', '{{').replace('}', '}}')
-
     kernel_file_contents = kernel_file_contents.replace('@x_expression', x_expression)
     kernel_file_contents = kernel_file_contents.replace('@y_expression', y_expression)
-
-'''formatted_kernel_file_contents = kernel_file_contents.format(**{
-    'x_expression': x_expression, 'y_expression': y_expression
-})'''
 
 stdout.write(kernel_file_contents)
