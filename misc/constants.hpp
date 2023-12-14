@@ -37,7 +37,7 @@ namespace constants
 
     namespace particle
     {
-        const size_t count            = 100;
+        const size_t count            = 10;
         const size_t trail_length     = 10;
         const size_t data_point_count = count * trail_length;
 

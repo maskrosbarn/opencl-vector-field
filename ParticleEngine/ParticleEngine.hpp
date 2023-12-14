@@ -45,8 +45,8 @@ private:
     {
         enum _
         {
-            random_number_seeds_buffer,
-            random_number_seed_flags_buffer,
+            random_numbers_buffer,
+            random_number_flags_buffer,
 
             particle_cartesian_position_buffer,
             particle_graphical_position_buffer,
@@ -60,14 +60,14 @@ private:
         };
     };
 
-    cl::Buffer random_number_seeds_buffer;
-    cl::Buffer random_number_seed_flags_buffer;
+    cl::Buffer random_numbers_buffer;
+    cl::Buffer random_number_flags_buffer;
     cl::Buffer cartesian_positions_buffer;
     cl::Buffer graphical_positions_buffer;
     cl::Buffer particle_reset_flags_buffer;
 
-    long * random_number_seeds;
-    bool * random_number_seed_flags;
+    float * random_numbers;
+    bool * random_number_flags;
 
     SDL_FPoint * cartesian_positions = nullptr;
     SDL_FPoint * graphical_positions = nullptr;

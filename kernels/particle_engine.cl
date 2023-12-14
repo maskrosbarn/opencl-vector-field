@@ -10,9 +10,12 @@ inline float y_function (Vector vector) { return @y_expression; }
 
 bool is_inside_viewport_area (Vector, Vector, int);
 
-float get_random_float (__global long *, __global bool *, size_t);
+float get_random_float (__global float *, __global bool *, size_t);
 
-Vector get_new_cartesian_position ();
+
+Vector get_new_cartesian_position (__global float *, __global bool *, Vector, int, size_t);
+
+
 Vector get_next_cartesian_position (Vector, float, float (*)(Vector), float (*)(Vector));
 
 Vector vector_cartesian_to_graphical (Vector, Vector, int, int);
@@ -26,14 +29,11 @@ Vector vector_scalar_multiply (float, Vector);
 
 __kernel void update_particle_data
 (
-    __global long * random_number_seeds_buffer,
-    __global bool * random_number_seed_flags_buffer,
-
-    __global float * random_number_buffer,
+    __global float * random_numbers_buffer,
     __global bool *  random_number_flags_buffer,
 
-    __global Vector * cartesian_position_buffer,
-    __global Vector * graphical_position_buffer,
+    __global Vector * cartesian_positions_buffer,
+    __global Vector * graphical_positions_buffer,
 
     const int particle_count,
     const int particle_trail_length,
@@ -48,52 +48,30 @@ __kernel void update_particle_data
 
     int particle_index = id * particle_trail_length;
 
+    int particle_component_index;
+
     for (int i = 0; i < particle_trail_length; i++)
     {
-        int particle_component_index = particle_index + i;
+        particle_component_index = particle_index + i;
 
-        Vector current_cartesian_position = cartesian_position_buffer[particle_component_index];
-
-        bool component_is_visible = is_inside_viewport_area(
-            current_cartesian_position,
+        Vector new_cartesian_position = get_new_cartesian_position(
+            random_numbers_buffer,
+            random_number_flags_buffer,
             cartesian_viewport_origin,
-            viewport_range
+            viewport_range,
+            id
         );
 
-        if (component_is_visible)
-        {
-            Vector particle_trail_head_position = cartesian_position_buffer[particle_index];
+        Vector graphical_position = vector_cartesian_to_graphical(
+            new_cartesian_position,
+            cartesian_viewport_origin,
+            viewport_range,
+            window_size
+        );
 
-            for (int j = 0; j < particle_trail_length; j++)
-            {
-                int particle_component_index = particle_index + j;
-                int next_particle_component_index = particle_component_index + 1;
-
-                cartesian_position_buffer[particle_component_index] = cartesian_position_buffer[next_particle_component_index];
-                graphical_position_buffer[particle_component_index] = graphical_position_buffer[next_particle_component_index];
-            }
-
-            cartesian_position_buffer[particle_index] = get_next_cartesian_position(
-                particle_trail_head_position,
-                DISCRETIZATION_CONSTANT,
-                x_function,
-                y_function
-            );
-
-            graphical_position_buffer[particle_index] = vector_cartesian_to_graphical(
-                cartesian_position_buffer[particle_index],
-                cartesian_viewport_origin,
-                viewport_range,
-                window_size
-            );
-
-            // most work items will (should) end here.  Branch divergence will be an issue, but not
-            // a huge one
-            return;
-        }
+        cartesian_positions_buffer[particle_component_index] = new_cartesian_position;
+        graphical_positions_buffer[particle_component_index] = graphical_position;
     }
-
-    //
 }
 
 bool is_inside_viewport_area (Vector point, Vector cartesian_viewport_origin, int viewport_range)
@@ -104,23 +82,59 @@ bool is_inside_viewport_area (Vector point, Vector cartesian_viewport_origin, in
     return x_in_range && y_in_range;
 }
 
-float get_random_float (__global long * seeds_buffer, __global bool * flag_buffer, size_t particle_index)
+float get_random_float (__global float * number_buffer, __global bool * flag_buffer, size_t particle_index)
 {
     flag_buffer[particle_index] = true;
-    
-    long seed = seeds_buffer[particle_index];
+
+    return number_buffer[particle_index];
 }
 
-Vector get_new_cartesian_position (__global float * random_number_buffer, __global bool * flag_buffer, size_t particle_index)
+Vector get_new_cartesian_position
+(
+    __global float * random_numbers_buffer,
+    __global bool *  random_number_flags_buffer,
+
+    Vector cartesian_viewport_origin,
+    int viewport_range,
+
+    size_t particle_index
+)
 {
-    float seed_value = get_random_float(random_number_buffer, flag_buffer, particle_index);
+    float seed = get_random_float(random_numbers_buffer, random_number_flags_buffer, particle_index);
+    float random_number;
 
-    Vector new_position = { 0, 0 };
+    Vector position;
 
-    if (seed_value < .25)
-        new_position = {  };
+    if (seed <= .25)
+    {
+        random_number = 8 * seed - 1;
 
-    return new_position;
+        position.x = -viewport_range * .5;
+        position.y = random_number * viewport_range * .5;
+    }
+    else if (seed > .25 && seed <= .5)
+    {
+        random_number = 8 * seed - 3;
+
+        position.x = viewport_range * .5;
+        position.y = random_number * viewport_range * .5;
+    }
+    else if (seed > .5 && seed <= .75)
+    {
+        random_number = 8 * seed - 5;
+
+        position.x = random_number * viewport_range * .5;
+        position.y = -viewport_range * .5;
+    }
+    else if (seed > .75)
+    {
+        random_number = 8 * seed - 7;
+
+        position.x = random_number * viewport_range * .5;
+        position.y = viewport_range * .5;
+    }
+
+    return vector_add(position, cartesian_viewport_origin);
 }
 
 Vector get_next_cartesian_position (Vector current_position, float epsilon, float (* x_function)(Vector), float (* y_function)(Vector))
