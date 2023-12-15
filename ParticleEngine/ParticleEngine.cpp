@@ -35,6 +35,7 @@ ParticleEngine::ParticleEngine (SDL_Renderer * renderer, Plot * plot):
     gpu_kernel.setArg(OpenCLKernelArguments::random_number_flags_buffer,         random_number_flags_buffer);
     gpu_kernel.setArg(OpenCLKernelArguments::particle_cartesian_position_buffer, cartesian_positions_buffer);
     gpu_kernel.setArg(OpenCLKernelArguments::particle_graphical_position_buffer, graphical_positions_buffer);
+    gpu_kernel.setArg(OpenCLKernelArguments::particle_reset_flags_buffer,        particle_reset_flags_buffer);
     gpu_kernel.setArg(OpenCLKernelArguments::particle_count,                     constants::particle::count);
     gpu_kernel.setArg(OpenCLKernelArguments::particle_trail_length,              constants::particle::trail_length);
     gpu_kernel.setArg(OpenCLKernelArguments::window_size,                        950);
@@ -122,7 +123,7 @@ void ParticleEngine::draw ()
             opencl_buffer_size
             );
 
-    for (size_t i = 0, k; i < constants::particle::count; i++)
+    /*for (size_t i = 0, k; i < constants::particle::count; i++)
     {
         std::printf("%04lu | ", i);
 
@@ -134,7 +135,7 @@ void ParticleEngine::draw ()
         }
 
         std::printf("\n");
-    }
+    }*/
 
     float alpha_multiplier;
 

@@ -5,6 +5,8 @@ typedef struct Vector
     float x, y;
 } Vector;
 
+__constant Vector NULL_VECTOR = { NAN, NAN };
+
 inline float x_function (Vector vector) { return @x_expression; }
 inline float y_function (Vector vector) { return @y_expression; }
 
@@ -35,6 +37,8 @@ __kernel void update_particle_data
     __global Vector * cartesian_positions_buffer,
     __global Vector * graphical_positions_buffer,
 
+    __global bool * reset_flags_buffer,
+
     const int particle_count,
     const int particle_trail_length,
     
@@ -44,16 +48,81 @@ __kernel void update_particle_data
     const int window_size
 )
 {
-    int id = get_global_id(0);
+    size_t id = get_global_id(0);
 
-    int particle_index = id * particle_trail_length;
+    size_t particle_index = id * particle_trail_length;
 
-    int particle_component_index;
+    bool trail_is_visible = false;
 
-    for (int i = 0; i < particle_trail_length; i++)
+    for (size_t i = particle_index; i < particle_index + particle_trail_length; i++)
     {
-        particle_component_index = particle_index + i;
+        if (is_inside_viewport_area(cartesian_positions_buffer[i], cartesian_viewport_origin, viewport_range))
+        {
+            trail_is_visible = true;
+            break;
+        }
+    }
 
+    Vector current_cartesian_position = cartesian_positions_buffer[particle_index];
+
+    Vector next_cartesian_position = get_next_cartesian_position(
+        current_cartesian_position,
+        DISCRETIZATION_CONSTANT,
+        x_function,
+        y_function
+    );
+
+    Vector next_graphical_position = vector_cartesian_to_graphical(
+        next_cartesian_position,
+        cartesian_viewport_origin,
+        viewport_range,
+        window_size
+    );
+
+    if (trail_is_visible || is_inside_viewport_area(next_cartesian_position, cartesian_viewport_origin, viewport_range))
+    {
+        Vector previous_component_cartesian_position;
+
+        for (size_t i = particle_index + 1; i < particle_index + particle_trail_length; i++)
+        {
+            cartesian_positions_buffer[i] = cartesian_positions_buffer[i - 1];
+
+            graphical_positions_buffer[i] = vector_cartesian_to_graphical(
+                cartesian_positions_buffer[i],
+                cartesian_viewport_origin,
+                viewport_range,
+                window_size
+            );
+        }
+
+        cartesian_positions_buffer[particle_index] = next_cartesian_position;
+        graphical_positions_buffer[particle_index] = next_graphical_position;
+    }
+    else
+    {
+        Vector new_cartesian_position = get_new_cartesian_position(
+            random_numbers_buffer,
+            random_number_flags_buffer,
+            cartesian_viewport_origin,
+            viewport_range,
+            id
+        );
+
+        Vector new_graphical_position = vector_cartesian_to_graphical(
+            new_cartesian_position,
+            cartesian_viewport_origin,
+            viewport_range,
+            window_size
+        );
+
+        cartesian_positions_buffer[particle_index] = new_cartesian_position;
+        graphical_positions_buffer[particle_index] = new_graphical_position;
+    }
+
+    ///////
+
+    /*for (int i = particle_index; i < particle_index + particle_trail_length; i++)
+    {
         Vector new_cartesian_position = get_new_cartesian_position(
             random_numbers_buffer,
             random_number_flags_buffer,
@@ -69,9 +138,9 @@ __kernel void update_particle_data
             window_size
         );
 
-        cartesian_positions_buffer[particle_component_index] = new_cartesian_position;
-        graphical_positions_buffer[particle_component_index] = graphical_position;
-    }
+        cartesian_positions_buffer[i] = new_cartesian_position;
+        graphical_positions_buffer[i] = graphical_position;
+    }*/
 }
 
 bool is_inside_viewport_area (Vector point, Vector cartesian_viewport_origin, int viewport_range)
