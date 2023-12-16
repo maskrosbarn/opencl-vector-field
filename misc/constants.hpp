@@ -39,7 +39,6 @@ namespace constants
     {
         const size_t count            = 1000;
         const size_t trail_length     = 10;
-        const size_t data_point_count = count * trail_length;
 
         const SDL_Color colour { 164, 164, 164, 1 };
     }

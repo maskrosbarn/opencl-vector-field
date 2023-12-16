@@ -130,9 +130,7 @@ void ParticleEngine::draw ()
         k = constants::particle::trail_length * i;
 
         for (size_t j = 0; j < constants::particle::trail_length; j++)
-        {
-            std::printf("( % 5.3f, % 5.3f )", graphical_positions[k + j].x, graphical_positions[k + j].y);
-        }
+            std::printf("% 5.3f, % 5.3f |", graphical_positions[k + j].x, graphical_positions[k + j].y);
 
         std::printf("\n");
     }*/

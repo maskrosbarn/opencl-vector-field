@@ -1,3 +1,5 @@
+#pragma OPENCL EXTENSION cl_intel_printf : enable
+
 __constant float DISCRETIZATION_CONSTANT = .01;
 
 typedef struct Vector
@@ -85,6 +87,8 @@ __kernel void update_particle_data
 
         for (size_t i = particle_index + 1; i < particle_index + particle_trail_length; i++)
         {
+            Vector current_cartesian_position = cartesian_positions_buffer[i];
+
             cartesian_positions_buffer[i] = cartesian_positions_buffer[i - 1];
 
             graphical_positions_buffer[i] = vector_cartesian_to_graphical(
@@ -93,6 +97,11 @@ __kernel void update_particle_data
                 viewport_range,
                 window_size
             );
+
+            if (current_cartesian_position.x > -1000000) {
+                //printf("%.2f, %.2f\n", current_cartesian_position.x, current_cartesian_position.y);
+                //break;
+            }
         }
 
         cartesian_positions_buffer[particle_index] = next_cartesian_position;
@@ -117,30 +126,22 @@ __kernel void update_particle_data
 
         cartesian_positions_buffer[particle_index] = new_cartesian_position;
         graphical_positions_buffer[particle_index] = new_graphical_position;
+
+        for (size_t i = particle_index + 1; i < particle_index + particle_trail_length; i++)
+        {
+            cartesian_positions_buffer[i] = NULL_VECTOR;
+            graphical_positions_buffer[i] = NULL_VECTOR;
+        }
+
+        reset_flags_buffer[particle_index] = true;
     }
 
-    ///////
-
-    /*for (int i = particle_index; i < particle_index + particle_trail_length; i++)
+    /*for (size_t i = 0; i < 20; i++)
     {
-        Vector new_cartesian_position = get_new_cartesian_position(
-            random_numbers_buffer,
-            random_number_flags_buffer,
-            cartesian_viewport_origin,
-            viewport_range,
-            id
-        );
+        printf(" %.2f, %.2f |", cartesian_positions_buffer[i].x, cartesian_positions_buffer[i].y);
+    }
 
-        Vector graphical_position = vector_cartesian_to_graphical(
-            new_cartesian_position,
-            cartesian_viewport_origin,
-            viewport_range,
-            window_size
-        );
-
-        cartesian_positions_buffer[i] = new_cartesian_position;
-        graphical_positions_buffer[i] = graphical_position;
-    }*/
+    printf("\n");*/
 }
 
 bool is_inside_viewport_area (Vector point, Vector cartesian_viewport_origin, int viewport_range)
@@ -210,7 +211,7 @@ Vector get_next_cartesian_position (Vector current_position, float epsilon, floa
 {
     Vector change = { x_function(current_position), y_function(current_position) };
 
-    return vector_add(current_position, vector_scalar_multiply(epsilon, vector_normalize(change)));
+    return vector_add(current_position, vector_scalar_multiply(epsilon, change));
 }
 
 Vector vector_cartesian_to_graphical (Vector vector, Vector cartesian_origin, int viewport_range, int window_size)
