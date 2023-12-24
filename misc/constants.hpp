@@ -38,7 +38,6 @@ namespace constants
     namespace particle
     {
         const size_t count            = 1000;
-        const size_t trail_length     = 10;
 
         const SDL_Color colour { 164, 164, 164, 1 };
     }

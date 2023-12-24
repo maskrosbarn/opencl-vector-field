@@ -27,7 +27,7 @@ public:
     void draw ();
 
 private:
-    static const size_t opencl_buffer_size = constants::particle::count * constants::particle::trail_length * sizeof(SDL_FPoint);
+    static const size_t opencl_buffer_size = constants::particle::count * sizeof(SDL_FPoint);
 
     static constexpr float particle_rect_offset = 2.f;
 
@@ -54,7 +54,7 @@ private:
             particle_reset_flags_buffer,
 
             particle_count,
-            particle_trail_length,
+            //particle_trail_length,
 
             viewport_origin,
             viewport_range,

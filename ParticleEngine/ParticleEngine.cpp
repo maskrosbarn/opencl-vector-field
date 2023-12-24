@@ -37,7 +37,7 @@ ParticleEngine::ParticleEngine (SDL_Renderer * renderer, Plot * plot):
     gpu_kernel.setArg(OpenCLKernelArguments::particle_graphical_position_buffer, graphical_positions_buffer);
     gpu_kernel.setArg(OpenCLKernelArguments::particle_reset_flags_buffer,        particle_reset_flags_buffer);
     gpu_kernel.setArg(OpenCLKernelArguments::particle_count,                     constants::particle::count);
-    gpu_kernel.setArg(OpenCLKernelArguments::particle_trail_length,              constants::particle::trail_length);
+    //gpu_kernel.setArg(OpenCLKernelArguments::particle_trail_length,              constants::particle::trail_length);
     gpu_kernel.setArg(OpenCLKernelArguments::window_size,                        950);
 
     random_numbers = (float *)gpu_command_queue.enqueueMapBuffer(
@@ -123,19 +123,15 @@ void ParticleEngine::draw ()
             opencl_buffer_size
             );
 
-    /*for (size_t i = 0, k; i < constants::particle::count; i++)
-    {
-        std::printf("%04lu | ", i);
+    SDL_FRect particle_rects [constants::particle::count];
 
-        k = constants::particle::trail_length * i;
+    for (size_t i = 0; i < constants::particle::count; i++)
+        particle_rects[i] = { graphical_positions[i].x - 1.5f, graphical_positions[i].y - 1.5f, 3, 3 };
 
-        for (size_t j = 0; j < constants::particle::trail_length; j++)
-            std::printf("% 5.3f, % 5.3f |", graphical_positions[k + j].x, graphical_positions[k + j].y);
+    SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
+    SDL_RenderFillRectsF(renderer, particle_rects, constants::particle::count);
 
-        std::printf("\n");
-    }*/
-
-    float alpha_multiplier;
+    /*float alpha_multiplier;
 
     SDL_Color colour = constants::particle::colour;
 
@@ -156,7 +152,7 @@ void ParticleEngine::draw ()
 
         SDL_SetRenderDrawColor(renderer, colour.r, colour.g, colour.b, colour.a);
         SDL_RenderFillRectsF(renderer, rects, constants::particle::count);
-    }
+    }*/
 
     gpu_command_queue.enqueueUnmapMemObject(graphical_positions_buffer, graphical_positions);
 }

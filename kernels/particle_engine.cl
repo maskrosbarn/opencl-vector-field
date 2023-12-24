@@ -12,6 +12,8 @@ __constant Vector NULL_VECTOR = { NAN, NAN };
 inline float x_function (Vector vector) { return @x_expression; }
 inline float y_function (Vector vector) { return @y_expression; }
 
+void reset_particle_position ();
+
 bool is_inside_viewport_area (Vector, Vector, int);
 
 float get_random_float (__global float *, __global bool *, size_t);
@@ -42,7 +44,6 @@ __kernel void update_particle_data
     __global bool * reset_flags_buffer,
 
     const int particle_count,
-    const int particle_trail_length,
     
     const Vector cartesian_viewport_origin,
     const int    viewport_range,
@@ -52,20 +53,15 @@ __kernel void update_particle_data
 {
     size_t id = get_global_id(0);
 
-    size_t particle_index = id * particle_trail_length;
-
     bool trail_is_visible = false;
 
-    for (size_t i = particle_index; i < particle_index + particle_trail_length; i++)
+    /*if (is_inside_viewport_area(cartesian_positions_buffer[id], cartesian_viewport_origin, viewport_range))
     {
-        if (is_inside_viewport_area(cartesian_positions_buffer[i], cartesian_viewport_origin, viewport_range))
-        {
-            trail_is_visible = true;
-            break;
-        }
-    }
+        trail_is_visible = true;
+        break;
+    }*/
 
-    Vector current_cartesian_position = cartesian_positions_buffer[particle_index];
+    Vector current_cartesian_position = cartesian_positions_buffer[id];
 
     Vector next_cartesian_position = get_next_cartesian_position(
         current_cartesian_position,
@@ -81,11 +77,9 @@ __kernel void update_particle_data
         window_size
     );
 
-    if (trail_is_visible || is_inside_viewport_area(next_cartesian_position, cartesian_viewport_origin, viewport_range))
+    if (is_inside_viewport_area(next_cartesian_position, cartesian_viewport_origin, viewport_range))
     {
-        Vector previous_component_cartesian_position;
-
-        for (size_t i = particle_index + 1; i < particle_index + particle_trail_length; i++)
+        /*for (size_t i = particle_index + particle_trail_length; i > particle_index; i--)
         {
             Vector current_cartesian_position = cartesian_positions_buffer[i];
 
@@ -97,15 +91,12 @@ __kernel void update_particle_data
                 viewport_range,
                 window_size
             );
+        }*/
 
-            if (current_cartesian_position.x > -1000000) {
-                //printf("%.2f, %.2f\n", current_cartesian_position.x, current_cartesian_position.y);
-                //break;
-            }
-        }
+        cartesian_positions_buffer[id] = next_cartesian_position;
+        graphical_positions_buffer[id] = next_graphical_position;
 
-        cartesian_positions_buffer[particle_index] = next_cartesian_position;
-        graphical_positions_buffer[particle_index] = next_graphical_position;
+        return;
     }
     else
     {
@@ -124,24 +115,17 @@ __kernel void update_particle_data
             window_size
         );
 
-        cartesian_positions_buffer[particle_index] = new_cartesian_position;
-        graphical_positions_buffer[particle_index] = new_graphical_position;
+        cartesian_positions_buffer[id] = new_cartesian_position;
+        graphical_positions_buffer[id] = new_graphical_position;
 
-        for (size_t i = particle_index + 1; i < particle_index + particle_trail_length; i++)
+        /*for (size_t i = particle_index + 1; i < particle_index + particle_trail_length; i++)
         {
             cartesian_positions_buffer[i] = NULL_VECTOR;
             graphical_positions_buffer[i] = NULL_VECTOR;
-        }
+        }*/
 
-        reset_flags_buffer[particle_index] = true;
+        //reset_flags_buffer[particle_index] = true;
     }
-
-    /*for (size_t i = 0; i < 20; i++)
-    {
-        printf(" %.2f, %.2f |", cartesian_positions_buffer[i].x, cartesian_positions_buffer[i].y);
-    }
-
-    printf("\n");*/
 }
 
 bool is_inside_viewport_area (Vector point, Vector cartesian_viewport_origin, int viewport_range)
