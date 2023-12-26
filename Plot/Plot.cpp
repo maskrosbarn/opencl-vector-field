@@ -220,7 +220,8 @@ void Plot::update_vector_property_matrix ()
 
     float vector_angle, vector_magnitude;
 
-    maximum_sample_point_magnitude = minimum_sample_point_magnitude = 0;
+    maximum_sample_point_magnitude = 0;
+    minimum_sample_point_magnitude = 0;
 
     for (size_t row = 0; row < constants::vector_arrow::row_sample_point_count; row++)
         for (size_t column = 0; column < constants::vector_arrow::row_sample_point_count; column++)
