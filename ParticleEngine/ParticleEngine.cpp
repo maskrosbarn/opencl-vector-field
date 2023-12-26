@@ -28,17 +28,14 @@ ParticleEngine::ParticleEngine (SDL_Renderer * renderer, Plot * plot):
     random_numbers_buffer       { opencl_context, CL_MEM_ALLOC_HOST_PTR, constants::particle::count * sizeof(float) },
     random_number_flags_buffer  { opencl_context, CL_MEM_ALLOC_HOST_PTR, constants::particle::count * sizeof(bool) },
     cartesian_positions_buffer  { opencl_context, CL_MEM_ALLOC_HOST_PTR, opencl_buffer_size },
-    graphical_positions_buffer  { opencl_context, CL_MEM_ALLOC_HOST_PTR, opencl_buffer_size },
-    particle_reset_flags_buffer { opencl_context, CL_MEM_ALLOC_HOST_PTR, constants::particle::count * sizeof(bool) }
+    graphical_positions_buffer  { opencl_context, CL_MEM_ALLOC_HOST_PTR, opencl_buffer_size }
 {
     gpu_kernel.setArg(OpenCLKernelArguments::random_numbers_buffer,              random_numbers_buffer);
     gpu_kernel.setArg(OpenCLKernelArguments::random_number_flags_buffer,         random_number_flags_buffer);
     gpu_kernel.setArg(OpenCLKernelArguments::particle_cartesian_position_buffer, cartesian_positions_buffer);
     gpu_kernel.setArg(OpenCLKernelArguments::particle_graphical_position_buffer, graphical_positions_buffer);
-    gpu_kernel.setArg(OpenCLKernelArguments::particle_reset_flags_buffer,        particle_reset_flags_buffer);
     gpu_kernel.setArg(OpenCLKernelArguments::particle_count,                     constants::particle::count);
-    //gpu_kernel.setArg(OpenCLKernelArguments::particle_trail_length,              constants::particle::trail_length);
-    gpu_kernel.setArg(OpenCLKernelArguments::window_size,                        950);
+    gpu_kernel.setArg(OpenCLKernelArguments::window_size,                        (int)constants::window_size);
 
     random_numbers = (float *)gpu_command_queue.enqueueMapBuffer(
             random_numbers_buffer,
@@ -56,25 +53,14 @@ ParticleEngine::ParticleEngine (SDL_Renderer * renderer, Plot * plot):
             constants::particle::count * sizeof(bool)
             );
 
-    particle_reset_flags = (bool *)gpu_command_queue.enqueueMapBuffer(
-            particle_reset_flags_buffer,
-            CL_TRUE,
-            CL_MAP_WRITE,
-            0,
-            constants::particle::count * sizeof(bool)
-            );
-
     for (int i = 0; i < constants::particle::count; i++)
     {
         random_numbers[i] = get_random_value();
         random_number_flags[i] = false;
-
-        particle_reset_flags[i] = false;
     }
 
     gpu_command_queue.enqueueUnmapMemObject(random_numbers_buffer, random_numbers);
     gpu_command_queue.enqueueUnmapMemObject(random_number_flags_buffer, random_number_flags);
-    gpu_command_queue.enqueueUnmapMemObject(particle_reset_flags_buffer, particle_reset_flags);
 }
 
 void ParticleEngine::update (size_t particle_count, SDL_FPoint cartesian_viewport_origin, int viewport_range)
@@ -128,31 +114,8 @@ void ParticleEngine::draw ()
     for (size_t i = 0; i < constants::particle::count; i++)
         particle_rects[i] = { graphical_positions[i].x - 1.5f, graphical_positions[i].y - 1.5f, 3, 3 };
 
-    SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
+    SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
     SDL_RenderFillRectsF(renderer, particle_rects, constants::particle::count);
-
-    /*float alpha_multiplier;
-
-    SDL_Color colour = constants::particle::colour;
-
-    SDL_FRect rects [constants::particle::count];
-
-    for (size_t i = 0; i < constants::particle::trail_length; i++)
-    {
-        alpha_multiplier = 1 - (float)i / constants::particle::trail_length;
-
-        colour.a = (Uint8)(255 * alpha_multiplier);
-
-        for (size_t j = i, k = 0; j < constants::particle::count * constants::particle::trail_length; j += constants::particle::trail_length)
-        {
-            rects[k] = { graphical_positions[j].x - 2.f, graphical_positions[j].y - 2.f, 4, 4 };
-
-            k++;
-        }
-
-        SDL_SetRenderDrawColor(renderer, colour.r, colour.g, colour.b, colour.a);
-        SDL_RenderFillRectsF(renderer, rects, constants::particle::count);
-    }*/
 
     gpu_command_queue.enqueueUnmapMemObject(graphical_positions_buffer, graphical_positions);
 }

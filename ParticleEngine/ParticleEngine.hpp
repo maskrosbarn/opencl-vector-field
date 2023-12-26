@@ -51,10 +51,7 @@ private:
             particle_cartesian_position_buffer,
             particle_graphical_position_buffer,
 
-            particle_reset_flags_buffer,
-
             particle_count,
-            //particle_trail_length,
 
             viewport_origin,
             viewport_range,

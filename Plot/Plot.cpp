@@ -254,7 +254,7 @@ void Plot::update_vector_property_matrix ()
                         cartesian_tail_position,
                         constants::vector_arrow::body_length,
                         vector_angle
-                );
+                        );
 
                 cartesian_head_position = graphical_to_cartesian(properties->head);
 
@@ -262,37 +262,29 @@ void Plot::update_vector_property_matrix ()
                         cartesian_head_position,
                         constants::vector_arrow::head_half_width,
                         vector_angle - (float)M_PI_4
-                );
+                        );
 
                 properties->head_right = get_fixed_graphical_length_from_cartesian(
                         cartesian_head_position,
                         constants::vector_arrow::head_half_width,
                         vector_angle + (float)M_PI_4
-                );
+                        );
 
                 properties->tip = get_fixed_graphical_length_from_cartesian(
                         cartesian_head_position,
                         constants::vector_arrow::head_length,
                         vector_angle
-                );
+                        );
             }
         }
 }
 
 void Plot::draw () const
 {
-    float h = mouse.position.graphical.x / constants::window_size;
-
-    SDL_Color c = get_heat_map_colour(h);
-
-    SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, 1);
-
-    SDL_FRect p { mouse.position.graphical.x, mouse.position.graphical.y, 50, 50 };
-    SDL_RenderDrawRectF(renderer, &p);
-
-
     draw_vector_field();
     draw_axes();
+
+    draw_cursor();
 }
 
 void Plot::draw_vector_field () const
@@ -383,4 +375,28 @@ void Plot::draw_axes () const
             axes_labels.text_format,
             axes_labels.y.negative.label_value
     );
+}
+
+void Plot::draw_cursor () const
+{
+    SDL_SetRenderDrawColor(
+            renderer,
+            constants::colour::foreground.r,
+            constants::colour::foreground.g,
+            constants::colour::foreground.b,
+            constants::colour::foreground.a
+            );
+
+    float text_width = FC_GetWidth(font, cursor_format, mouse.position.cartesian.x, mouse.position.cartesian.y);
+    float text_height = FC_GetLineHeight(font);
+
+    FC_Draw(
+            font,
+            renderer,
+            fmin(mouse.position.graphical.x, constants::window_size - text_width - constants::cursor_offset) + constants::cursor_offset,
+            fmin(mouse.position.graphical.y, constants::window_size - text_height - constants::cursor_offset) + constants::cursor_offset,
+            cursor_format,
+            mouse.position.cartesian.x,
+            mouse.position.cartesian.y
+            );
 }

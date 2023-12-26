@@ -38,9 +38,8 @@ public:
     [[nodiscard]] int get_viewport_range () const;
     void set_viewport_range (int);
 
-    [[nodiscard]] SDL_FPoint
-        graphical_to_cartesian (SDL_FPoint) const,
-        cartesian_to_graphical (SDL_FPoint) const;
+    [[nodiscard]] SDL_FPoint graphical_to_cartesian (SDL_FPoint) const;
+    [[nodiscard]] SDL_FPoint cartesian_to_graphical (SDL_FPoint) const;
 
     Plot (SDL_Renderer *, BivariateFunction, BivariateFunction);
 
@@ -139,6 +138,8 @@ private:
 
     SDL_FPoint axes_position { 0, 0 };
 
+    const char * const cursor_format = "(%.2f, %.2f)";
+
     [[nodiscard]] SDL_FPoint get_fixed_graphical_length_from_cartesian (SDL_FPoint, float, float) const;
 
     void update_mouse_position ();
@@ -149,6 +150,8 @@ private:
     void draw_vector (size_t, size_t) const;
 
     void draw_axes () const;
+
+    void draw_cursor () const;
 };
 
 

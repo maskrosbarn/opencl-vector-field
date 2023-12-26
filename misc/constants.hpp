@@ -12,7 +12,9 @@
 
 namespace constants
 {
-    const float window_size = 950.f;
+    constexpr float window_size = 950.f;
+
+    constexpr float cursor_offset = 10.f;
 
     namespace font
     {
@@ -22,13 +24,13 @@ namespace constants
 
     namespace colour
     {
-        const SDL_Color background { 0, 0, 0, 255 };
-        const SDL_Color foreground { 255, 255, 255, 255 };
+        constexpr SDL_Color background { 0, 0, 0, 255 };
+        constexpr SDL_Color foreground { 255, 255, 255, 255 };
     }
 
     namespace vector_arrow
     {
-        const int row_sample_point_count = 40;
+        constexpr int row_sample_point_count = 40;
 
         constexpr float body_length     = 8.f;
         constexpr float head_length     = 6.f;
@@ -37,15 +39,15 @@ namespace constants
 
     namespace particle
     {
-        const size_t count            = 1000;
+        constexpr size_t count = 1000;
 
-        const SDL_Color colour { 164, 164, 164, 1 };
+        constexpr SDL_Color colour { 100, 100, 100, 100 };
     }
 
     namespace axes
     {
-        const int maximum_range = 100;
-        const int minimum_range = 1;
+        constexpr int maximum_range = 100;
+        constexpr int minimum_range = 1;
 
         constexpr float label_margin = 5.f;
     }
