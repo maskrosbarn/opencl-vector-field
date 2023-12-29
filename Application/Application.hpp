@@ -38,6 +38,10 @@ private:
     void mouse_button_down (SDL_MouseButtonEvent);
     void mouse_button_up (SDL_MouseButtonEvent);
     void mouse_wheel_moved (SDL_MouseWheelEvent);
+
+    void key_pressed (SDL_KeyboardEvent);
+
+    void window_event (SDL_WindowEvent);
 };
 
 

@@ -12,7 +12,7 @@
 
 namespace constants
 {
-    constexpr float window_size = 950.f;
+    constexpr float window_size = 800.f;
 
     constexpr float cursor_offset = 10.f;
 

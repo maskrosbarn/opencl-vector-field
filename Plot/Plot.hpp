@@ -41,6 +41,11 @@ public:
     [[nodiscard]] SDL_FPoint graphical_to_cartesian (SDL_FPoint) const;
     [[nodiscard]] SDL_FPoint cartesian_to_graphical (SDL_FPoint) const;
 
+    [[nodiscard]] bool get_axes_visibility () const;
+    void set_axes_visibility (bool);
+
+    void set_is_on_window (bool);
+
     Plot (SDL_Renderer *, BivariateFunction, BivariateFunction);
 
     void update ();
@@ -82,6 +87,8 @@ private:
         SDL_FPoint cartesian_drag_origin { 0, 0 };
 
         bool has_left_button_pressed = false;
+
+        bool is_on_window = false;
     } mouse;
 
     struct
@@ -137,6 +144,8 @@ private:
     } axes_labels;
 
     SDL_FPoint axes_position { 0, 0 };
+
+    bool axes_are_visible = true;
 
     const char * const cursor_format = "(%.2f, %.2f)";
 

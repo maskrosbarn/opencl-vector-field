@@ -104,6 +104,14 @@ void Application::did_receive_event (SDL_Event event)
         case SDL_MOUSEWHEEL:
             mouse_wheel_moved(event.wheel);
             break;
+
+        case SDL_KEYDOWN:
+            key_pressed(event.key);
+            break;
+
+        case SDL_WINDOWEVENT:
+            window_event(event.window);
+            break;
     }
 }
 
@@ -152,4 +160,34 @@ void Application::mouse_wheel_moved (SDL_MouseWheelEvent event)
     plot.set_viewport_range(plot.get_viewport_range() - (int)event.preciseY);
 
     plot.update_on_next_pass();
+}
+
+void Application::key_pressed (SDL_KeyboardEvent event)
+{
+    switch (event.keysym.sym)
+    {
+        case 32:
+            plot.set_viewport_range(20);
+            plot.set_viewport_cartesian_origin({0, 0});
+            plot.update_on_next_pass();
+            break;
+
+        case 97:
+            plot.set_axes_visibility(!plot.get_axes_visibility());
+            break;
+    }
+}
+
+void Application::window_event (SDL_WindowEvent event)
+{
+    switch (event.event)
+    {
+        case SDL_WINDOWEVENT_ENTER:
+            plot.set_is_on_window(true);
+            break;
+
+        case SDL_WINDOWEVENT_LEAVE:
+            plot.set_is_on_window(false);
+            break;
+    }
 }

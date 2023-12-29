@@ -84,6 +84,21 @@ SDL_FPoint Plot::cartesian_to_graphical (SDL_FPoint point) const
     return cartesian_to_graphical_space(point, viewport.cartesian_origin, viewport.range);
 }
 
+bool Plot::get_axes_visibility () const
+{
+    return axes_are_visible;
+}
+
+void Plot::set_axes_visibility (bool is_visible)
+{
+    axes_are_visible = is_visible;
+}
+
+void Plot::set_is_on_window (bool is_on_window)
+{
+    mouse.is_on_window = is_on_window;
+}
+
 Plot::Plot (SDL_Renderer * renderer, BivariateFunction x_function, BivariateFunction y_function):
     renderer   { renderer },
     x_function { x_function },
@@ -283,18 +298,19 @@ void Plot::update_vector_property_matrix ()
 void Plot::draw () const
 {
     draw_vector_field();
-    draw_axes();
 
-    draw_cursor();
+    if (axes_are_visible)
+        draw_axes();
+
+    if (mouse.is_on_window)
+        draw_cursor();
 }
 
 void Plot::draw_vector_field () const
 {
     for (size_t row = 0; row < constants::vector_arrow::row_sample_point_count; row++)
-    {
         for (size_t column = 0; column < constants::vector_arrow::row_sample_point_count; column++)
             draw_vector(row, column);
-    }
 }
 
 void Plot::draw_vector (size_t sample_point_row, size_t sample_point_column) const

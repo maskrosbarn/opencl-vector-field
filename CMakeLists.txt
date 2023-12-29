@@ -10,8 +10,6 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_CURRENT_S
 add_executable(VectorField main.cpp
         lib/SDL_FontCache/SDL_FontCache.h
         lib/SDL_FontCache/SDL_FontCache.c
-        OpenCL/opencl.hpp
-        OpenCL/opencl.cpp
         Application/Application.cpp
         Application/Application.hpp
         misc/BivariateFunction.hpp

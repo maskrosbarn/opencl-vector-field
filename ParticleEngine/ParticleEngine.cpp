@@ -8,7 +8,6 @@
 #include <cstdlib>
 
 #include "ParticleEngine.hpp"
-#include "OpenCL/opencl.hpp"
 
 static float get_random_value ()
 {
