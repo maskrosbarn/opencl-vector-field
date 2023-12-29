@@ -6,7 +6,7 @@ g\left ( x, y \right ) \end{bmatrix}$$
 $$\overrightarrow{b} = \begin{bmatrix}x\\
 y\end{bmatrix} + \overrightarrow{a}\left ( x, y \right )$$
 
-$b$ is normalised and plotted at fixed intervals on $x$ and $y$. The functions $f$ and $g$ can be any function which will be used to determine the behaviour of the vector field in the x- and y-directions, respectively. Vector magnitude is shown by a red to blue colour gradient, representing the highest and lowest magnitudes, respectively within the current viewport. The positions of the particles are computed using the GPU through OpenCL to reduce load on the CPU allowing for many more particles to be rendered.
+$b$ is normalised and plotted at fixed intervals on $x$ and $y$. The functions $f$ and $g$ can be any function which will be used to determine the behaviour of the vector field in the x- and y-directions, respectively. Vector magnitude is shown by a red to blue colour gradient, representing the highest and lowest magnitudes, respectively within the current viewport. The positions of the particles are computed using the GPU through OpenCL to reduce load on the CPU allowing for the rendering of many more particles.
 
 | Control | Function |
 | --- | --- |
