@@ -17,11 +17,11 @@ $b$ is normalised and plotted at fixed intervals on $x$ and $y$. The functions $
 
 In the demonstrations below, the chosen functions are the equations of motion of a pendulum where we rename the x - y plane as the $\theta$ - $v$ plane representing the angular position and velocity, respectively, of a pendulum under gravity.
 
-| ![demo](https://github.com/maskrosbarn/opencl-vector-field/assets/91302084/a8665cc3-581d-4fb3-82dc-21dd2abf59bf) | ![pan_demo](https://github.com/maskrosbarn/opencl-vector-field/assets/91302084/e96a9c5f-cba0-4f71-b23e-f456fe3844cf) | ![zoom_demo](https://github.com/maskrosbarn/opencl-vector-field/assets/91302084/3df156e7-ec98-4c9f-8e42-1a8b33beb19f) |
-| --- | --- | --- |
-| Particle Motion | Panning | Zooming |
-
 $$\begin{bmatrix} f\left ( x, y \right )\\
 g\left ( x, y \right ) \end{bmatrix} = \begin{bmatrix} f\left ( \theta, v \right )\\
 g\left ( \theta, v \right ) \end{bmatrix} = \begin{bmatrix} v\\
 -\mu v - \frac{g}{L} sin \left ( \theta \right ) \end{bmatrix}$$
+
+| ![demo](https://github.com/maskrosbarn/opencl-vector-field/assets/91302084/a8665cc3-581d-4fb3-82dc-21dd2abf59bf) | ![pan_demo](https://github.com/maskrosbarn/opencl-vector-field/assets/91302084/e96a9c5f-cba0-4f71-b23e-f456fe3844cf) | ![zoom_demo](https://github.com/maskrosbarn/opencl-vector-field/assets/91302084/3df156e7-ec98-4c9f-8e42-1a8b33beb19f) |
+| --- | --- | --- |
+| Particle Motion | Panning | Zooming |
