@@ -132,9 +132,8 @@ void Plot::update ()
 
 SDL_FPoint Plot::get_fixed_graphical_length_from_cartesian (SDL_FPoint point, float length, float angle) const
 {
-    SDL_FPoint
-            graphical_position = cartesian_to_graphical(point),
-            adjustment         = length * (SDL_FPoint){ cosf(-angle), sinf(-angle) };
+    SDL_FPoint graphical_position = cartesian_to_graphical(point);
+    SDL_FPoint adjustment         = length * (SDL_FPoint){ cosf(-angle), sinf(-angle) };
 
     return graphical_position + adjustment;
 }
@@ -202,7 +201,7 @@ void Plot::update_axes ()
     axes_labels.y.positive.position = { y_label_x_position, constants::axes::label_margin };
     axes_labels.y.negative.position = { y_label_x_position, constants::window_size - constants::axes::label_margin - font_line_height };
 
-    // fixme: how the hell can the axis label pinning be seamless?
+    // fixme: axis label pinning seamless?
 
     if (axes_position.x < negative_y_text_width + 2 * constants::axes::label_margin && axes_position.y < font_line_height + 2 * constants::axes::label_margin)
     {
@@ -228,10 +227,9 @@ void Plot::update_vector_property_matrix ()
 {
     VectorProperties * properties;
 
-    SDL_FPoint
-        cartesian_tail_position,
-        direction_vector,
-        cartesian_head_position;
+    SDL_FPoint cartesian_tail_position;
+    SDL_FPoint direction_vector;
+    SDL_FPoint cartesian_head_position;
 
     float vector_angle, vector_magnitude;
 
@@ -239,18 +237,21 @@ void Plot::update_vector_property_matrix ()
     minimum_sample_point_magnitude = 0;
 
     for (size_t row = 0; row < constants::vector_arrow::row_sample_point_count; row++)
+    {
         for (size_t column = 0; column < constants::vector_arrow::row_sample_point_count; column++)
         {
             properties = &vector_properties_matrix[row][column];
 
             properties->tail = {
-                    std::fmaf(2, (float)column, 1) * constants::window_size / (2 * constants::vector_arrow::row_sample_point_count),
-                    std::fmaf(2, (float)row, 1) * constants::window_size / (2 * constants::vector_arrow::row_sample_point_count)
+                    std::fmaf(2, (float) column, 1) * constants::window_size /
+                    (2 * constants::vector_arrow::row_sample_point_count),
+                    std::fmaf(2, (float) row, 1) * constants::window_size /
+                    (2 * constants::vector_arrow::row_sample_point_count)
             };
 
             cartesian_tail_position = graphical_to_cartesian(properties->tail);
 
-            direction_vector = { x_function(cartesian_tail_position), y_function(cartesian_tail_position) };
+            direction_vector = {x_function(cartesian_tail_position), y_function(cartesian_tail_position)};
 
             vector_magnitude = magnitude(direction_vector);
 
@@ -270,29 +271,30 @@ void Plot::update_vector_property_matrix ()
                         cartesian_tail_position,
                         constants::vector_arrow::body_length,
                         vector_angle
-                        );
+                );
 
                 cartesian_head_position = graphical_to_cartesian(properties->head);
 
                 properties->head_left = get_fixed_graphical_length_from_cartesian(
                         cartesian_head_position,
                         constants::vector_arrow::head_half_width,
-                        vector_angle - (float)M_PI_4
-                        );
+                        vector_angle - (float) M_PI_4
+                );
 
                 properties->head_right = get_fixed_graphical_length_from_cartesian(
                         cartesian_head_position,
                         constants::vector_arrow::head_half_width,
-                        vector_angle + (float)M_PI_4
-                        );
+                        vector_angle + (float) M_PI_4
+                );
 
                 properties->tip = get_fixed_graphical_length_from_cartesian(
                         cartesian_head_position,
                         constants::vector_arrow::head_length,
                         vector_angle
-                        );
+                );
             }
         }
+    }
 }
 
 void Plot::draw () const
@@ -309,8 +311,10 @@ void Plot::draw () const
 void Plot::draw_vector_field () const
 {
     for (size_t row = 0; row < constants::vector_arrow::row_sample_point_count; row++)
+    {
         for (size_t column = 0; column < constants::vector_arrow::row_sample_point_count; column++)
             draw_vector(row, column);
+    }
 }
 
 void Plot::draw_vector (size_t sample_point_row, size_t sample_point_column) const
