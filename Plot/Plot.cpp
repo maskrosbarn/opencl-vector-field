@@ -323,12 +323,11 @@ void Plot::draw_vector (size_t sample_point_row, size_t sample_point_column) con
 
     SDL_SetRenderDrawColor(renderer, colour.r, colour.g, colour.b, colour.a);
 
-    SDL_FPoint
-            tail = vector_properties.tail,
-            head = vector_properties.head,
-            head_left = vector_properties.head_left,
-            head_right = vector_properties.head_right,
-            tip = vector_properties.tip;
+    SDL_FPoint tail = vector_properties.tail;
+    SDL_FPoint head = vector_properties.head;
+    SDL_FPoint head_left = vector_properties.head_left;
+    SDL_FPoint head_right = vector_properties.head_right;
+    SDL_FPoint tip = vector_properties.tip;
 
     SDL_RenderDrawLineF(renderer, tail.x, tail.y, head.x, head.y);
 
