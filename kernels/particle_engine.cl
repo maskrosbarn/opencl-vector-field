@@ -1,21 +1,40 @@
 #pragma OPENCL EXTENSION cl_intel_printf : enable
 
+__constant long MRG32K3A_M1 = 4294967087;
+__constant long MRG32K3A_M2 = 4294944443;
+__constant long MRG32K3A_D  = 4294967088;
+
+typedef enum MRG32K3A_VARIABLE_INDICES
+{
+    a10, a11, a12,
+    a20, a21, a22,
+    x10, x11, x12,
+    x20, x21, x22,
+
+    variable_count
+
+} MRG32K3A_VARIABLE_INDICES;
+
 __constant float DISCRETIZATION_CONSTANT = .01;
 __constant float MINIMUM_MAGNITUDE       = .005;
 
 typedef struct Vector
 {
     float x, y;
+
 } Vector;
+
+long mod (long, long);
+
+long next_random_long (size_t, __global long *);
+float get_random_float (size_t, __global long *);
 
 inline float x_function (Vector vector) { return @x_expression; }
 inline float y_function (Vector vector) { return @y_expression; }
 
 bool is_inside_viewport_area (Vector, Vector, int);
 
-float get_random_float (__global float *, __global bool *, size_t);
-
-Vector get_new_cartesian_position (__global float *, __global bool *, Vector, int, size_t);
+Vector get_new_cartesian_position (size_t, __global long *, Vector, int);
 
 Vector vector_cartesian_to_graphical (Vector, Vector, int, int);
 inline float cartesian_to_graphical_x (float, float, int, int);
@@ -28,8 +47,7 @@ Vector vector_scalar_multiply (float, Vector);
 
 __kernel void update_particle_data
 (
-    __global float * random_numbers_buffer,
-    __global bool *  random_number_flags_buffer,
+    __global long * mrg32k3a_state_variables_buffer,
 
     __global Vector * cartesian_positions_buffer,
     __global Vector * graphical_positions_buffer,
@@ -75,11 +93,10 @@ __kernel void update_particle_data
     }
 
     Vector new_cartesian_position = get_new_cartesian_position(
-        random_numbers_buffer,
-        random_number_flags_buffer,
+        id,
+        mrg32k3a_state_variables_buffer,
         cartesian_viewport_origin,
-        viewport_range,
-        id
+        viewport_range
     );
 
     Vector new_graphical_position = vector_cartesian_to_graphical(
@@ -93,6 +110,58 @@ __kernel void update_particle_data
     graphical_positions_buffer[id] = new_graphical_position;
 }
 
+long mod (long dividend, long divisor)
+{
+    long mod_result = dividend % divisor;
+
+    if (mod_result < 0)
+        return divisor < 0 ? mod_result - divisor : mod_result + divisor;
+
+    return mod_result;
+}
+
+long next_random_long
+(
+    size_t global_id,
+    __global long * mrg32k3a_state_variables_buffer
+)
+{
+    size_t offset = global_id * variable_count;
+
+    long x1i = mod(
+            mrg32k3a_state_variables_buffer[a10 + offset] * mrg32k3a_state_variables_buffer[x10 + offset] +
+            mrg32k3a_state_variables_buffer[a11 + offset] * mrg32k3a_state_variables_buffer[x11 + offset] +
+            mrg32k3a_state_variables_buffer[a12 + offset] * mrg32k3a_state_variables_buffer[x12 + offset],
+            MRG32K3A_M1);
+
+    long x2i = mod(
+            mrg32k3a_state_variables_buffer[a20 + offset] * mrg32k3a_state_variables_buffer[x20 + offset] +
+            mrg32k3a_state_variables_buffer[a21 + offset] * mrg32k3a_state_variables_buffer[x21 + offset] +
+            mrg32k3a_state_variables_buffer[a22 + offset] * mrg32k3a_state_variables_buffer[x22 + offset],
+            MRG32K3A_M2);
+
+    mrg32k3a_state_variables_buffer[x12 + offset] = mrg32k3a_state_variables_buffer[x11 + offset];
+    mrg32k3a_state_variables_buffer[x11 + offset] = mrg32k3a_state_variables_buffer[x10 + offset];
+    mrg32k3a_state_variables_buffer[x10 + offset] = x1i;
+
+    mrg32k3a_state_variables_buffer[x22 + offset] = mrg32k3a_state_variables_buffer[x21 + offset];
+    mrg32k3a_state_variables_buffer[x21 + offset] = mrg32k3a_state_variables_buffer[x20 + offset];
+    mrg32k3a_state_variables_buffer[x20 + offset] = x2i;
+
+    return mod(x1i - x2i, MRG32K3A_M1);
+}
+
+float get_random_float
+(
+    size_t global_id,
+    __global long * mrg32k3a_state_variables_buffer
+)
+{
+    long random_long = next_random_long(global_id, mrg32k3a_state_variables_buffer);
+
+    return (float)random_long / (float)MRG32K3A_D;
+}
+
 bool is_inside_viewport_area (Vector point, Vector cartesian_viewport_origin, int viewport_range)
 {
     bool x_in_range = ldexp(fabs(cartesian_viewport_origin.x - point.x), 1) <= (float)viewport_range;
@@ -101,55 +170,47 @@ bool is_inside_viewport_area (Vector point, Vector cartesian_viewport_origin, in
     return x_in_range && y_in_range;
 }
 
-float get_random_float (__global float * number_buffer, __global bool * flag_buffer, size_t particle_index)
-{
-    flag_buffer[particle_index] = true;
-
-    return number_buffer[particle_index];
-}
-
 Vector get_new_cartesian_position
 (
-    __global float * random_numbers_buffer,
-    __global bool *  random_number_flags_buffer,
+    size_t global_id,
+    __global long * mrg32k3a_state_variables_buffer,
 
     Vector cartesian_viewport_origin,
-    int viewport_range,
 
-    size_t particle_index
+    int viewport_range
 )
 {
-    float seed = get_random_float(random_numbers_buffer, random_number_flags_buffer, particle_index);
-    float random_number;
+    float random_number = get_random_float(global_id, mrg32k3a_state_variables_buffer);
+    float mapped_random_number;
 
     Vector position;
 
-    if (seed <= .25)
+    if (random_number <= .25)
     {
-        random_number = 8 * seed - 1;
+        mapped_random_number = 8 * random_number - 1;
 
         position.x = -viewport_range * .5;
-        position.y = random_number * viewport_range * .5;
+        position.y = mapped_random_number * viewport_range * .5;
     }
-    else if (seed > .25 && seed <= .5)
+    else if (random_number > .25 && random_number <= .5)
     {
-        random_number = 8 * seed - 3;
+        mapped_random_number = 8 * random_number - 3;
 
         position.x = viewport_range * .5;
-        position.y = random_number * viewport_range * .5;
+        position.y = mapped_random_number * viewport_range * .5;
     }
-    else if (seed > .5 && seed <= .75)
+    else if (random_number > .5 && random_number <= .75)
     {
-        random_number = 8 * seed - 5;
+        mapped_random_number = 8 * random_number - 5;
 
-        position.x = random_number * viewport_range * .5;
+        position.x = mapped_random_number * viewport_range * .5;
         position.y = -viewport_range * .5;
     }
-    else if (seed > .75)
+    else if (random_number > .75)
     {
-        random_number = 8 * seed - 7;
+        mapped_random_number = 8 * random_number - 7;
 
-        position.x = random_number * viewport_range * .5;
+        position.x = mapped_random_number * viewport_range * .5;
         position.y = viewport_range * .5;
     }
 
@@ -159,8 +220,8 @@ Vector get_new_cartesian_position
 Vector vector_cartesian_to_graphical (Vector vector, Vector cartesian_origin, int viewport_range, int window_size)
 {
     Vector graphical_position = {
-        cartesian_to_graphical_x(vector.x, cartesian_origin.x, viewport_range, window_size),
-        cartesian_to_graphical_y(vector.y, cartesian_origin.y, viewport_range, window_size)
+            cartesian_to_graphical_x(vector.x, cartesian_origin.x, viewport_range, window_size),
+            cartesian_to_graphical_y(vector.y, cartesian_origin.y, viewport_range, window_size)
     };
 
     return graphical_position;

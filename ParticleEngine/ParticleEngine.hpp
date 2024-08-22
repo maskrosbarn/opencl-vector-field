@@ -45,8 +45,7 @@ private:
     {
         enum _
         {
-            random_numbers_buffer,
-            random_number_flags_buffer,
+            mrg32k3a_state_variables_buffer,
 
             particle_cartesian_position_buffer,
             particle_graphical_position_buffer,
@@ -60,14 +59,16 @@ private:
         };
     };
 
+    cl::Buffer mrg32k3a_state_variables_buffer;
+
     cl::Buffer random_numbers_buffer;
     cl::Buffer random_number_flags_buffer;
+
     cl::Buffer cartesian_positions_buffer;
     cl::Buffer graphical_positions_buffer;
     cl::Buffer particle_reset_flags_buffer;
 
-    float * random_numbers;
-    bool * random_number_flags;
+    int64_t * mrg32k3a_state_variables;
 
     SDL_FPoint * cartesian_positions = nullptr;
     SDL_FPoint * graphical_positions = nullptr;

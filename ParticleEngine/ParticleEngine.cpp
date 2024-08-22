@@ -2,10 +2,12 @@
 // Created by Russell Forrest on 01/11/2023.
 //
 
-#include <cstdio>
+#include <iostream>
 #include <fstream>
 #include <string>
 #include <cstdlib>
+#include <random>
+#include <climits>
 
 #include "ParticleEngine.hpp"
 
@@ -24,42 +26,62 @@ ParticleEngine::ParticleEngine (SDL_Renderer * renderer, Plot * plot):
     gpu_kernel        { gpu_program, "update_particle_data" },
     gpu_command_queue { opencl_context, gpu_device },
 
+    mrg32k3a_state_variables_buffer
+    {
+        opencl_context,
+        CL_MEM_ALLOC_HOST_PTR,
+        constants::particle::count * constants::mrg32k3a::variables::count * sizeof(unsigned long)
+    },
+
     random_numbers_buffer       { opencl_context, CL_MEM_ALLOC_HOST_PTR, constants::particle::count * sizeof(float) },
     random_number_flags_buffer  { opencl_context, CL_MEM_ALLOC_HOST_PTR, constants::particle::count * sizeof(bool) },
     cartesian_positions_buffer  { opencl_context, CL_MEM_ALLOC_HOST_PTR, opencl_buffer_size },
     graphical_positions_buffer  { opencl_context, CL_MEM_ALLOC_HOST_PTR, opencl_buffer_size }
 {
-    gpu_kernel.setArg(OpenCLKernelArguments::random_numbers_buffer,              random_numbers_buffer);
-    gpu_kernel.setArg(OpenCLKernelArguments::random_number_flags_buffer,         random_number_flags_buffer);
+    gpu_kernel.setArg(OpenCLKernelArguments::mrg32k3a_state_variables_buffer,    mrg32k3a_state_variables_buffer);
     gpu_kernel.setArg(OpenCLKernelArguments::particle_cartesian_position_buffer, cartesian_positions_buffer);
     gpu_kernel.setArg(OpenCLKernelArguments::particle_graphical_position_buffer, graphical_positions_buffer);
     gpu_kernel.setArg(OpenCLKernelArguments::particle_count,                     constants::particle::count);
     gpu_kernel.setArg(OpenCLKernelArguments::window_size,                        (int)constants::window_size);
 
-    random_numbers = (float *)gpu_command_queue.enqueueMapBuffer(
-            random_numbers_buffer,
+    mrg32k3a_state_variables = (int64_t *)gpu_command_queue.enqueueMapBuffer(
+            mrg32k3a_state_variables_buffer,
             CL_TRUE,
             CL_MAP_WRITE,
             0,
-            constants::particle::count * sizeof(long)
+            constants::particle::count * constants::mrg32k3a::variables::count * sizeof(int64_t)
             );
 
-    random_number_flags = (bool *)gpu_command_queue.enqueueMapBuffer(
-            random_number_flags_buffer,
-            CL_TRUE,
-            CL_MAP_WRITE,
-            0,
-            constants::particle::count * sizeof(bool)
-            );
+    size_t state_variable_index;
 
-    for (int i = 0; i < constants::particle::count; i++)
+    std::default_random_engine random_engine;
+    std::uniform_int_distribution<int64_t> distribution(LLONG_MIN, LLONG_MAX);
+
+    for (size_t particle_index = 0, variable_index; particle_index < constants::particle::count; particle_index++)
     {
-        random_numbers[i] = get_random_value();
-        random_number_flags[i] = false;
+        state_variable_index = constants::mrg32k3a::variables::count * particle_index;
+
+        for (variable_index = 0; variable_index < constants::mrg32k3a::variables::count; variable_index++)
+        {
+            // variables a10, a11, a12, a20, a21, a22 must be initialised to random numbers
+            if (variable_index < constants::mrg32k3a::variables::x10)
+                mrg32k3a_state_variables[state_variable_index] = distribution(random_engine);
+
+            // variables x10, and x20 must also be initialised to random numbers
+            else if (
+                    variable_index == constants::mrg32k3a::variables::x10 &&
+                    variable_index == constants::mrg32k3a::variables::x20)
+                mrg32k3a_state_variables[state_variable_index] = distribution(random_engine);
+
+            // everything else – i.e. x11, x12, x21, and x22 must be initialised to 0
+            else
+                mrg32k3a_state_variables[state_variable_index] = 0;
+
+            state_variable_index += variable_index;
+        }
     }
 
-    gpu_command_queue.enqueueUnmapMemObject(random_numbers_buffer, random_numbers);
-    gpu_command_queue.enqueueUnmapMemObject(random_number_flags_buffer, random_number_flags);
+    gpu_command_queue.enqueueUnmapMemObject(mrg32k3a_state_variables_buffer, mrg32k3a_state_variables);
 }
 
 void ParticleEngine::update (size_t particle_count, SDL_FPoint cartesian_viewport_origin, int viewport_range)
@@ -68,34 +90,6 @@ void ParticleEngine::update (size_t particle_count, SDL_FPoint cartesian_viewpor
     gpu_kernel.setArg(OpenCLKernelArguments::viewport_range, viewport_range);
 
     gpu_command_queue.enqueueNDRangeKernel(gpu_kernel, cl::NullRange, cl::NDRange { particle_count });
-
-    random_numbers = (float *)gpu_command_queue.enqueueMapBuffer(
-            random_numbers_buffer,
-            CL_TRUE,
-            CL_MAP_WRITE,
-            0,
-            constants::particle::count * sizeof(float)
-            );
-
-    random_number_flags = (bool *)gpu_command_queue.enqueueMapBuffer(
-            random_number_flags_buffer,
-            CL_TRUE,
-            CL_MAP_READ | CL_MAP_WRITE,
-            0,
-            constants::particle::count * sizeof(bool)
-            );
-
-    for (size_t i = 0; i < constants::particle::count; i++)
-    {
-        if (random_number_flags[i])
-        {
-            random_numbers[i] = get_random_value();
-            random_number_flags[i] = false;
-        }
-    }
-
-    gpu_command_queue.enqueueUnmapMemObject(random_numbers_buffer, random_numbers);
-    gpu_command_queue.enqueueUnmapMemObject(random_number_flags_buffer, random_number_flags);
 }
 
 void ParticleEngine::draw ()
@@ -113,7 +107,14 @@ void ParticleEngine::draw ()
     for (size_t i = 0; i < constants::particle::count; i++)
         particle_rects[i] = { graphical_positions[i].x - 1.5f, graphical_positions[i].y - 1.5f, 3, 3 };
 
-    SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
+    SDL_SetRenderDrawColor(
+            renderer,
+            constants::particle::colour.r,
+            constants::particle::colour.g,
+            constants::particle::colour.b,
+            constants::particle::colour.a
+            );
+
     SDL_RenderFillRectsF(renderer, particle_rects, constants::particle::count);
 
     gpu_command_queue.enqueueUnmapMemObject(graphical_positions_buffer, graphical_positions);

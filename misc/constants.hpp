@@ -51,6 +51,20 @@ namespace constants
 
         constexpr float label_margin = 5.f;
     }
+
+    namespace mrg32k3a
+    {
+        enum variables : size_t
+        {
+            a10, a11, a12,
+            a20, a21, a22,
+
+            x10, x11, x12,
+            x20, x21, x22,
+
+            count
+        };
+    }
 }
 
 
