@@ -2,19 +2,12 @@
 // Created by Russell Forrest on 01/11/2023.
 //
 
-#include <iostream>
 #include <fstream>
-#include <string>
 #include <cstdlib>
 #include <random>
 #include <climits>
 
 #include "ParticleEngine.hpp"
-
-static float get_random_value ()
-{
-    return (float)rand() / (float)RAND_MAX;
-}
 
 ParticleEngine::ParticleEngine (SDL_Renderer * renderer, Plot * plot):
     renderer { renderer },
@@ -69,7 +62,7 @@ ParticleEngine::ParticleEngine (SDL_Renderer * renderer, Plot * plot):
 
             // variables x10, and x20 must also be initialised to random numbers
             else if (
-                    variable_index == constants::mrg32k3a::variables::x10 &&
+                    variable_index == constants::mrg32k3a::variables::x10 ||
                     variable_index == constants::mrg32k3a::variables::x20)
                 mrg32k3a_state_variables[state_variable_index] = distribution(random_engine);
 

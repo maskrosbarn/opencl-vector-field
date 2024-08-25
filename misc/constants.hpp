@@ -39,9 +39,9 @@ namespace constants
 
     namespace particle
     {
-        constexpr size_t count = 1000;
+        constexpr size_t count = 100000;
 
-        constexpr SDL_Color colour { 100, 100, 100, 100 };
+        constexpr SDL_Color colour { 55, 55, 55, 255 };
     }
 
     namespace axes
