@@ -57,13 +57,10 @@ ParticleEngine::ParticleEngine (SDL_Renderer * renderer, Plot * plot):
         for (variable_index = 0; variable_index < constants::mrg32k3a::variables::count; variable_index++)
         {
             // variables a10, a11, a12, a20, a21, a22 must be initialised to random numbers
-            if (variable_index < constants::mrg32k3a::variables::x10)
-                mrg32k3a_state_variables[state_variable_index] = distribution(random_engine);
-
-            // variables x10, and x20 must also be initialised to random numbers
-            else if (
-                    variable_index == constants::mrg32k3a::variables::x10 ||
-                    variable_index == constants::mrg32k3a::variables::x20)
+            // as well as x10, and x20
+            if (variable_index < constants::mrg32k3a::variables::x10 ||
+                variable_index == constants::mrg32k3a::variables::x10 ||
+                variable_index == constants::mrg32k3a::variables::x20)
                 mrg32k3a_state_variables[state_variable_index] = distribution(random_engine);
 
             // everything else – i.e. x11, x12, x21, and x22 must be initialised to 0
